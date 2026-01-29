@@ -1,0 +1,13 @@
+services:
+  foritlegends:
+    image: madebydamo/fortilegends:master
+    build: .
+    container_name: mkdocs
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./test-docs:/docs
+      # - /mnt/SSD/DATA/AppData/mkdocs:/docs  # uncomment for production files
+    environment:
+      - WATCHDOG_FORCE_POLLING=true
+    user: 1000:1000
