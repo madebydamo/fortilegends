@@ -24,6 +24,7 @@
               networks = ["internal"];
               ports = [8000];
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/fortilegends"
             // lib.neo.mkServiceMeta {
               icon = "https://fortitudo.ch/wp-content/uploads/bb-plugin/cache/Handball_Q-circle-7f2fafa8ce8f1d478818b326ede99714-609e8d9a014ef.jpg";
               description = ''
@@ -34,7 +35,8 @@
               '';
               projectUrl = "https://fortilegends.ch/";
               githubUrl = "https://github.com/madebydamo/fortilegends/";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "FortiLegends service configuration";
