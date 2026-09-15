@@ -18,7 +18,7 @@
             WATCHDOG_FORCE_POLLING = "true";
             TZ = config.neo.core.timeZone;
           };
-          image = "madebydamo/fortilegends:master";
+          image = cfg.containers.fortilegends;
           autoStart = true;
           volumes = ["${config.neo.core.volumes.appdata}/fortilegends:/docs"];
           networks = ["internal"];
