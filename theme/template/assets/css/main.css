@@ -633,9 +633,10 @@ h6 {
   display: none;
 }
 
-/* ... and travels down to the hero title (transform set by the JS): under
-   the ball, each text line on a page-coloured backing so no grid line shows
-   through the letters on the way */
+/* Travels down to the hero title (transform set by the JS), under the ball.
+   Line-height is 0.85, so the two lines overlap. Any fill on a line box
+   (paper colour, selection) paints over the line above — keep backgrounds
+   transparent so the letters stay clean. */
 .intro__title.is-moving {
   z-index: 4; /* under the page-ball (5), above in-flow page copy */
   transition: none;
@@ -649,14 +650,9 @@ h6 {
   visibility: hidden;
 }
 
+.intro__title,
 .intro__title span {
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  transition: background-color 0.35s ease;
-}
-
-.intro__title.is-moving span {
-  background: var(--background);
+  background: transparent;
 }
 
 .intro__title.is-gone {

@@ -86,8 +86,9 @@ Then the movie: the net swings, the ball drops, the title slides in over the
 scene, and the ball rolls back and on down the page in one continuous motion.
 The page scrolls along and the stage title travels down with it and turns
 into the hero title (same font and the same line breaks, so it is one shape
-the whole way, each line on a page-coloured backing; `.hero__title` stays
-hidden until it arrives). From the roll-back on the ball is drawn on its own
+the whole way; the letters stay on a transparent backing because the tight
+line-height would otherwise let a fill cover the line above; `.hero__title`
+stays hidden until it arrives). From the roll-back on the ball is drawn on its own
 small canvas (`.intro__pageball`) above everything, so it always passes in
 front of the title; a hidden stand-in keeps its shadow on the stage floor. It all ends with the hero at the top of the screen (right under
 the header) and the ball resting next to the first line of the hero title,
