@@ -1,13 +1,10 @@
 <!-- block copyright -->
-{%- if config.copyright %}
-    <small class="d-block mb-3">{{ config.copyright }}</small>
-{%- endif %}
-{% if not config.extra.generator == false %}
-    <small class="d-block mb-3">
-        Made with
-        <a href="https://github.com/FernandoCelmer/mkdocs-simple-blog" target="_blank" rel="noopener">
-            Simple Blog for MkDocs
-        </a>
-    </small>
-{% endif %}
+<span>&copy; {{ build_date_utc.year if build_date_utc else '' }} {{ config.copyright or config.site_name }}{% if config.site_author %} &middot; {{ config.site_author }}{% endif %}</span>
+<span>
+  {%- if not config.extra.generator == false %}
+  Made with <a href="https://github.com/FernandoCelmer/mkdocs-simple-blog" target="_blank" rel="noopener">Simple Blog</a> for <a href="https://www.mkdocs.org/" target="_blank" rel="noopener">MkDocs</a>
+  {%- else %}
+  Forti-Legends // Sit {{ config.theme.founded or '2024' }}
+  {%- endif %}
+</span>
 <!-- endblock -->

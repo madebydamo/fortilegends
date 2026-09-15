@@ -1,0 +1,40 @@
+<!-- block stats (front page only) -->
+{%- set stats = page.meta.stats %}
+{%- if stats is not sameas false %}
+{#- defaults computed from the navigation: posts, years, authors, founding year -#}
+{%- set ns = namespace(posts=0, years=0, first=none, authors=[]) %}
+{%- for item in nav %}{% if item.children %}{% set ns.years = ns.years + 1 %}{% if ns.first is none or item.title < ns.first %}{% set ns.first = item.title %}{% endif %}{% endif %}{% endfor %}
+{%- for item in nav recursive %}
+  {%- if item.children %}{{ loop(item.children) }}
+  {%- elif item.is_page and not item.is_homepage %}
+    {%- set ns.posts = ns.posts + 1 %}
+    {%- for a in (item.meta.authors or ([item.meta.author] if item.meta.author else [])) %}
+      {%- if a not in ns.authors %}{% set ns.authors = ns.authors + [a] %}{% endif %}
+    {%- endfor %}
+  {%- endif %}
+{%- endfor %}
+{%- if not stats %}
+{%- set stats = [
+  {'label': 'Events', 'value': ns.posts},
+  {'label': 'Jahre', 'value': ns.years},
+  {'label': 'Status', 'value': 'Live'},
+  {'label': 'Chronik', 'value': 'On'}
+] %}
+{%- endif %}
+<section class="stats" id="stats">
+  <p class="stats__kicker">{{ page.meta.stats_title or 'Proof in the archive.' }}</p>
+  <p class="stats__lead">{{ page.meta.stats_text or config.site_description or config.site_name }}</p>
+  <div class="stats__grid">
+    {%- for s in stats %}
+    {%- set v = s.value | string %}
+    {%- set numeric = (v | replace('.', '', 1) | replace('-', '', 1)).isdigit() and s.count is not sameas false and v | length < 4 %}
+    <div class="stat">
+      <div class="stat__label">{{ s.label }} //</div>
+      <div class="stat__value"{% if numeric %} data-count="{{ v }}" data-text="{{ v }}"{% endif %}><span class="stat__number">{{ v }}</span>{% if s.unit %}<span class="stat__unit">{{ s.unit }}</span>{% endif %}</div>
+      {%- if s.caption %}<div class="stat__caption">{{ s.caption }}</div>{% endif %}
+    </div>
+    {%- endfor %}
+  </div>
+</section>
+{%- endif %}
+<!-- endblock -->

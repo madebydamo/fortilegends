@@ -1,28 +1,41 @@
 <!-- block content -->
-<section class="container post" id="component-content">
-    <article>
-        <header>
-            {% if config.theme.components and config.theme.components.title == False %}
-            {% else %}
-                <h1 class="{{ config.theme.title_style }} title" id="component-title">{{ page.title }}</h1>
-            {% endif %}
-        </header>
-        {% set created = ((fmt_date(page.meta.date) if fmt_date is defined else page.meta.date) if page.meta.date else page.meta.git_creation_date_localized) if page else None %}
-        {% set updated = ((fmt_date(page.meta.updated) if fmt_date is defined else page.meta.updated) if page.meta.updated else page.meta.git_revision_date_localized) if page else None %}
-        {% if (created or updated) and not (config.theme.components and config.theme.components.page_dates == False) %}
-        <p class="page-dates">
-            {% if created %}Created on {{ created }}{% endif %}
-            {% if updated and updated != created %} — updated on {{ updated }}{% endif %}
-        </p>
-        {% if page.content and page.content.strip() %}
-        <hr class="page-dates-divider">
-        {% endif %}
-        {% endif %}
-        <p>{{ page.content }}</p>
-    </article>
-
-    {% if (page and page.meta.blog_list) or (config.theme.components and config.theme.components.blog_list) %}
-    {% include "modules/blog_list.html" %}
+{%- import "modules/macros.html" as m with context %}
+{%- set show_aside = config.theme.sidebar and page.toc and not page.is_homepage %}
+<section class="post {% if page.is_homepage %}post--home{% else %}post--article{% if not show_aside %} post--no-aside{% endif %}{% endif %}" id="component-content">
+  {%- if not page.is_homepage %}
+  {%- set authors = m.authors(page) %}
+  <header class="post__head">
+    <p class="post__kicker">Biitrag{% if page.parent and page.parent.title %} // {{ page.parent.title }}{% endif %}</p>
+    {% if config.theme.components and config.theme.components.title == False %}
+    {% else %}
+    <h1 class="post__title" id="component-title">{{ page.title }}</h1>
     {% endif %}
+    {%- set created = page.meta.date or page.meta.git_creation_date_localized %}
+    {%- if (created or authors or page.meta.summary) and not (config.theme.components and config.theme.components.page_dates == False) %}
+    <div class="post__meta">
+      <div class="post__meta-cell"><span>Datum //</span><strong>{{ m.fmt_date(created) or '–' }}</strong></div>
+      <div class="post__meta-cell"><span>{{ 'Autore' if page.meta.authors and page.meta.authors | length > 1 else 'Autor' }} //</span><strong>{{ authors or '–' }}</strong></div>
+      <div class="post__meta-cell"><span>Kurz gseit //</span><strong>{{ page.meta.summary or page.meta.description or config.site_description }}</strong></div>
+    </div>
+    {%- endif %}
+  </header>
+  {%- endif %}
+
+  <div class="post__layout">
+    {%- if show_aside %}
+    <aside class="post__aside">
+      {%- block sidebar %}
+      {% include "modules/sidebar.html" %}
+      {%- endblock %}
+    </aside>
+    {%- endif %}
+    <article class="post__body">
+      {{ page.content }}
+    </article>
+  </div>
+
+  {% if (page and page.meta.blog_list) or (config.theme.components and config.theme.components.blog_list) %}
+  {% include "modules/blog_list.html" %}
+  {% endif %}
 </section>
 <!-- endblock -->

@@ -1,19 +1,5 @@
 {% extends "main.html" %}
 
 {% block content %}
-
-{% if config.theme.sidebar %}
-<div class="container">
-	<div class="row">
-		<div class="col-12" id="component-content">
-			{%- block content_with_sidebar %}
-				{% include "/modules/search.html" %}
-			{%- endblock %}
-		</div>
-	</div>
-</div>
-{% else %}
-	{% include "/modules/search.html" %}
-{% endif %}
-
+{% include "modules/search.html" %}
 {% endblock %}

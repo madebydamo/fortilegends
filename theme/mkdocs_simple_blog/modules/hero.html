@@ -1,0 +1,36 @@
+<!-- block hero (front page only) -->
+{%- import "modules/macros.html" as m with context %}
+{%- set hero = page.meta.hero or {} %}
+{%- if hero is not sameas false %}
+{#- newest post by front-matter date, used for the default call to action -#}
+{%- set ns = namespace(latest=none) %}
+{%- for item in nav recursive %}
+  {%- if item.children %}{{ loop(item.children) }}
+  {%- elif item.is_page and not item.is_homepage and item.meta and item.meta.date %}
+    {%- if ns.latest is none or (item.meta.date | string) > (ns.latest.meta.date | string) %}{% set ns.latest = item %}{% endif %}
+  {%- endif %}
+{%- endfor %}
+{%- set cta_url = m.resolve(hero.cta_url) if hero.cta_url else (ns.latest.url | url if ns.latest else none) %}
+<section class="hero" id="hero">
+  <div class="hero__copy">
+    <p class="hero__kicker">{{ hero.kicker or config.site_description or config.site_name }}</p>
+    <h1 class="hero__title">{{ hero.title or config.site_name }}</h1>
+    <div class="hero__text">{% if hero.text %}<p>{{ hero.text }}</p>{% endif %}</div>
+    {%- if cta_url or hero.cta_url %}
+    <div class="hero__actions">
+      <a class="button" href="{{ cta_url }}">{{ hero.cta or 'Zum neuste Biitrag' }}{% if ns.latest and not hero.cta_url %} // {{ m.fmt_date(ns.latest.meta.date) }}{% endif %}</a>
+      {%- if hero.cta2 and hero.cta2_url %}
+      <a class="button button--solid" href="{{ m.resolve(hero.cta2_url) }}">{{ hero.cta2 }}</a>
+      {%- endif %}
+    </div>
+    {%- endif %}
+  </div>
+  <div class="hero__media">
+    {%- if hero.image %}
+    <img src="{{ hero.image | url }}" alt="{{ hero.image_alt or '' }}" fetchpriority="high">
+    {%- endif %}
+    {%- if hero.image_tag %}<span class="hero__tag">{{ hero.image_tag }}</span>{% endif %}
+  </div>
+</section>
+{%- endif %}
+<!-- endblock -->

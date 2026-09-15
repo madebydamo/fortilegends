@@ -1,2 +1,4 @@
 test-docs/
 result
+__pycache__/
+.playwright-mcp/

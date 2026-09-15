@@ -1,4 +1,4 @@
-language: en
+language: de
 
 include_search_page: true
 search_index_only: false
@@ -7,10 +7,17 @@ sidebar: false
 navigation_depth: 2
 highlightjs: false
 hljs_languages: []
+
+# Scrolling ticker under the header: true (post titles), false, or a list of strings.
+marquee: true
+# Second line in the footer's first column.
+footer_tagline: ""
+
 components:
   site_name: true
   title: true
   menu: true
+  marquee: true
   preview: true
   footer: true
   page_dates: true
