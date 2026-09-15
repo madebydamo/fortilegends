@@ -27,7 +27,7 @@
 
         ## Architecture (hosting)
         - Container: `fortilegends` (`madebydamo/fortilegends:master`)
-        - Serves MkDocs (`mkdocs-simple-blog`) on **:8000**, Docker network `internal`
+        - Serves MkDocs with the vendored `simple-blog` theme (`theme/` in this repo) on **:8000**, Docker network `internal`
         - SWAG: `https://<subdomain>.<domain>` → `http://fortilegends:8000`
         - `WATCHDOG_FORCE_POLLING=true` so bind-mounted Markdown reloads reliably
         - Optional tinyauth / VPN via Neo options; defaults are public + no VPN

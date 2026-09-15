@@ -1,0 +1,10 @@
+.git
+test-docs
+result
+modules
+flake.nix
+flake.lock
+docker-compose.yml
+**/.git
+**/__pycache__
+**/*.pyc

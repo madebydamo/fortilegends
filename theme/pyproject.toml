@@ -1,0 +1,72 @@
+[project]
+name = "mkdocs-simple-blog"
+version = "0.6.1"
+authors = [
+  { name="Fernando Celmer", email="email@fernandocelmer.com" },
+]
+maintainers = [
+  { name="Fernando Celmer", email="email@fernandocelmer.com" }
+]
+license = {file = "LICENSE"}
+description = "Mkdocs Blog Theme"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["mkdocs>=1.6.1,<2.0.0", "babel>=2.9.0"]
+keywords = ["mkdocs", "blog", "theme", "documentation"]
+classifiers = [
+  'Development Status :: 4 - Beta',
+  "Operating System :: OS Independent",
+  'Intended Audience :: Developers',
+  'Natural Language :: English',
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Homepage = "https://github.com/FernandoCelmer/mkdocs-simple-blog"
+Issues = "https://github.com/FernandoCelmer/mkdocs-simple-blog/issues"
+Repository = "https://github.com/FernandoCelmer/mkdocs-simple-blog"
+Documentation = "https://fernandocelmer.github.io/mkdocs-simple-blog"
+Changelog = "https://fernandocelmer.github.io/mkdocs-simple-blog/nav/development/release-notes/"
+
+
+[tool.poetry]
+name = "mkdocs-simple-blog"
+version = "0.6.1"
+description = "Mkdocs Blog Theme"
+authors = ["Fernando Celmer <email@fernandocelmer.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10.0"
+mkdocs = { version = ">=1.6.1,<2.0.0" }
+babel = { version = ">=2.9.0" }
+
+[tool.poetry.group.dev.dependencies]
+build = "^1.3.0"
+pytest = "^9.0.3"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.12.0"
+jinja2 = "^3.1.0"
+pymdown-extensions = "^11.0.1"
+
+[tool.poetry.group.code-quality.dependencies]
+ruff = "^0.6.0"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+black = "^26.3.1"
+isort = "^5.13.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."mkdocs.themes"]
+simple-blog = "mkdocs_simple_blog"
+
+[tool.poetry.plugins."mkdocs.plugins"]
+simple-blog-posts = "mkdocs_simple_blog.plugin:BlogPlugin"
