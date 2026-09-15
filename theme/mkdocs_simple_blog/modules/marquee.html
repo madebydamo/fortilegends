@@ -1,0 +1,29 @@
+<!-- block marquee -->
+{%- set mq = config.theme.marquee if config.theme.marquee is defined else true %}
+{%- if mq %}
+{%- set items = [] %}
+{%- if mq is not sameas true and mq is iterable and mq is not string %}
+  {%- for t in mq %}{% set _ = items.append({'title': t, 'url': none}) %}{% endfor %}
+{%- else %}
+  {%- if config.site_description %}{% set _ = items.append({'title': config.site_description, 'url': none}) %}{% endif %}
+  {%- for item in nav recursive %}
+    {%- if item.children %}{{ loop(item.children) }}
+    {%- elif not item.is_homepage %}{% set _ = items.append({'title': item.title, 'url': item.url}) %}
+    {%- endif %}
+  {%- endfor %}
+{%- endif %}
+{%- if items %}
+<div class="marquee">
+  <div class="marquee__track">
+    {%- for rep in range(2) %}
+    <div class="marquee__group"{% if rep %} aria-hidden="true"{% endif %}>
+      {%- for it in items %}
+      {%- if it.url and not rep %}<a class="marquee__item" href="{{ it.url | url }}">{{ it.title }}</a>{% else %}<span class="marquee__item">{{ it.title }}</span>{% endif %}<span class="marquee__sep" aria-hidden="true">//</span>
+      {%- endfor %}
+    </div>
+    {%- endfor %}
+  </div>
+</div>
+{%- endif %}
+{%- endif %}
+<!-- endblock -->

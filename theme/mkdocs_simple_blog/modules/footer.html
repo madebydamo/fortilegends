@@ -1,11 +1,42 @@
 <!-- block footer -->
-<footer class="pt-4 my-md-5 pt-md-5 border-top" id="component-footer">
-    <div class="row">
-        <div class="col-12 col-md">
-            {%- block footer %}
-                {% include "/modules/copyright.html" %}
-            {%- endblock %}
-        </div>
+{%- import "modules/macros.html" as m with context %}
+<footer class="footer wrap" id="component-footer">
+  <div class="footer__grid">
+    <div class="footer__col footer__col--brand">
+      <p>{{ config.site_description or config.site_name }}.</p>
+      <p>{{ config.theme.footer_tagline or 'Fründschaft. Erinnerige. Gueti Ziite.' }}</p>
     </div>
+    <div class="footer__col">
+      <div class="footer__label">Index</div>
+      {%- for item in nav %}
+      {%- if item.children %}
+      <a href="{{ m.section_anchor(item) }}">{{ item.title }}</a>
+      {%- else %}
+      <a href="{{ item.url | url }}">{{ 'Home' if item.is_homepage else item.title }}</a>
+      {%- endif %}
+      {%- endfor %}
+      {%- if 'search' in config.plugins %}
+      <a href="{{ 'search.html' | url }}">Suche</a>
+      {%- endif %}
+    </div>
+    <div class="footer__col">
+      <div class="footer__label">Mitmache</div>
+      {%- if page and page.edit_url %}
+      <a href="{{ page.edit_url }}" target="_blank" rel="noopener">Biitrag bearbeite</a>
+      {%- endif %}
+      {%- if config.site_url %}
+      <a href="{{ config.site_url }}">{{ config.site_url | replace('https://', '') | replace('http://', '') | trim('/') }}</a>
+      {%- endif %}
+      {%- if config.repo_url %}
+      <a href="{{ config.repo_url }}" target="_blank" rel="noopener">{{ config.repo_name or 'Repository' }}</a>
+      {%- endif %}
+      <a href="#top">Ufe &uarr;</a>
+    </div>
+  </div>
+  <div class="footer__legal">
+    {%- block copyright %}
+    {% include "modules/copyright.html" %}
+    {%- endblock %}
+  </div>
 </footer>
 <!-- endblock -->

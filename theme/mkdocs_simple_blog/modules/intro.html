@@ -1,0 +1,33 @@
+<!-- block intro (front page only): the mini game (throw the handball into the goal) -->
+{%- set intro = page.meta.intro or {} %}
+{%- if intro is not sameas false %}
+{#- founding year from the navigation (first year folder) -#}
+{%- set ns = namespace(first=none) %}
+{%- for item in nav %}{% if item.children and (ns.first is none or item.title < ns.first) %}{% set ns.first = item.title %}{% endif %}{% endfor %}
+{%- set since = intro.since or ns.first or '' %}
+{%- set board = intro.board if intro.board is defined else {} %}
+<section class="intro" id="intro" aria-label="Intro"
+  {%- if intro.ball_model %} data-ball="{{ intro.ball_model|url }}"{% endif %}
+  {%- if intro.goal_model %} data-goal="{{ intro.goal_model|url }}"{% endif %}
+  data-goal-rotation="{{ intro.goal_rotation or 0 }}"
+  {%- if intro.ball_front %} data-ball-front="{{ intro.ball_front }}"{% endif %}
+  {%- if intro.hint %} data-hint-aim="{{ intro.hint }}"{% endif %}
+  {%- if intro.hint_done %} data-hint-done="{{ intro.hint_done }}"{% endif %}
+  {%- if board is sameas false %} data-board="off"{% else %}
+  data-home="{{ board.home or 'Forti' }}" data-guest="{{ board.guest or 'Gast' }}"
+  data-score="{{ board.score or '64:5' }}" data-period="{{ board.period or 2 }}"
+  data-clock="{{ board.clock or '29:30' }}"
+  data-penalty="{{ board.penalty or '1:09' }}" data-penalty-number="{{ board.penalty_number or 3 }}"{% endif %}>
+  <div class="intro__stage">
+    <p class="intro__kicker">{{ intro.kicker or ('Ziitkapsle vo de Forti-Legends // sit ' ~ since) }}</p>
+    <p class="intro__label" aria-hidden="true">{{ intro.label or 'Mini-Game // Wirf de Ball is Goal' }}</p>
+    <svg class="intro__aim" aria-hidden="true"><line x1="0" y1="0" x2="0" y2="0"></line><polygon points="0,0 0,0 0,0"></polygon></svg>
+    <p class="intro__hint" aria-hidden="true"></p>
+  </div>
+  {#- the title sits outside the stage so it can travel down to the hero title;
+      the <br> after the first hyphen is only used when the hero title breaks too -#}
+  {%- set t = intro.title or config.site_name %}
+  <h1 class="intro__title"><span>{% if '-' in t %}{{ t.split('-', 1)[0] }}-<br>{{ t.split('-', 1)[1] }}{% else %}{{ t }}{% endif %}</span></h1>
+</section>
+{%- endif %}
+<!-- endblock -->

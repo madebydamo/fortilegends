@@ -1,0 +1,32 @@
+{#- Shared Jinja macros for the Forti-Legends theme -#}
+
+{#- Format a YAML date (datetime.date) as dd.mm.yyyy; pass strings through. -#}
+{%- macro fmt_date(d) -%}
+{%- if d is none or d == "" -%}
+{%- elif d.strftime is defined -%}{{ d.strftime('%d.%m.%Y') }}
+{%- else -%}{{ d }}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- Turn a source path like `2026/3_Bigevent.md` into a page URL. Falls back to the value itself. -#}
+{%- macro resolve(src) -%}
+{%- set ns = namespace(url=none) -%}
+{%- for item in nav recursive -%}
+  {%- if item.children -%}{{ loop(item.children) }}
+  {%- elif item.is_page and item.file and item.file.src_uri == src -%}{%- set ns.url = item.url -%}
+  {%- endif -%}
+{%- endfor -%}
+{{ (ns.url if ns.url is not none else src) | url }}
+{%- endmacro -%}
+
+{#- Authors of a page as a list. -#}
+{%- macro authors(p) -%}
+{%- if p.meta.authors -%}{{ p.meta.authors | join(' & ') }}
+{%- elif p.meta.author -%}{{ p.meta.author }}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- Anchor on the front page for a nav section, e.g. `#2026`. -#}
+{%- macro section_anchor(item) -%}
+{{ nav.homepage.url | url }}#{{ item.title | lower | replace(' ', '-') }}
+{%- endmacro -%}

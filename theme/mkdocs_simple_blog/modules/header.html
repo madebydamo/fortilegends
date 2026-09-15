@@ -1,50 +1,56 @@
 <!-- block header -->
-<nav class="navbar navbar-expand-xl border-bottom">
-    <div class="container-fluid">
-        {% if config.theme.logo %}
-            <img class="logo" src="{{ config.theme.logo|url }}">
-        {% endif %}
+{%- import "modules/macros.html" as m with context %}
+<div class="wrap">
+  <nav class="nav" aria-label="Hauptnavigation">
+    <a class="brand" href="{{ nav.homepage.url | url }}">
+      {% if config.theme.logo %}<img class="brand__logo" src="{{ config.theme.logo | url }}" alt="">{% else %}<span class="brand__dot" aria-hidden="true"></span>{% endif %}
+      <span>{{ config.site_name }}</span>
+    </a>
 
-        {% if config.theme.components and config.theme.components.site_name == False %}
-        {% else %}
-            <span class="{{ config.theme.site_name_style }} fs-4 title-color site-name" id="component-site-name" style="text-transform: uppercase;">{{ config.site_name }}</span>
-        {% endif %}
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+      <span></span><span></span><span></span>
+      <span class="sr-only">Menü</span>
+    </button>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsMenu"
-            aria-controls="navbarsMenu" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <div class="nav__menu" id="site-menu">
+      {% if config.theme.components and config.theme.components.menu == False %}
+      <ul class="nav__links"></ul>
+      {% else %}
+      <ul class="nav__links">
+        {%- for item in nav %}
+        {%- if item.children %}
+        <li class="nav__item nav__item--section{% if item.active %} is-active{% endif %}">
+          <a href="{{ m.section_anchor(item) }}" aria-expanded="false">
+            {{ item.title }}
+            <svg class="nav__caret" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          </a>
+          <ul class="nav__dropdown">
+            {%- for child in item.children recursive %}
+            {%- if child.children %}{{ loop(child.children) }}
+            {%- else %}
+            <li><a href="{{ child.url | url }}"{% if child.active %} class="is-active"{% endif %}>{{ child.title }}</a></li>
+            {%- endif %}
+            {%- endfor %}
+          </ul>
+        </li>
+        {%- else %}
+        <li class="nav__item{% if item.active %} is-active{% endif %}">
+          <a href="{{ item.url | url }}">{{ 'Home' if item.is_homepage else item.title }}</a>
+        </li>
+        {%- endif %}
+        {%- endfor %}
+      </ul>
+      {% endif %}
 
-        <div class="collapse navbar-collapse flex-column ml-auto" id="navbarsMenu">
-            <ul class="navbar-nav">
-
-                <!-- block menu -->
-                <li class="nav-item">
-                    {% include "modules/menu.html" %}
-                </li>
-                <!-- endblock -->
-
-                <!-- block search -->
-                <li class="nav-item">
-                    <a class="collapsed" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-                        <div class="md-search-icon">
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                        </div>
-                    </a>
-                </li>
-                <!--  endblock -->
-
-                <!-- block source -->
-                <li class="nav-item">
-                    {% if config.repo_url %}
-                        {% if config.repo_name != 'GitHub' %}
-                            {% include "modules/source.html" %}
-                        {% endif %}
-                    {% endif %}
-                </li>
-                <!--  endblock -->
-            </ul>
-        </div>
+      <ul class="nav__aux">
+        {%- if 'search' in config.plugins %}
+        <li class="nav__item"><a href="{{ 'search.html' | url }}">Suche</a></li>
+        {%- endif %}
+        {%- if config.repo_url %}
+        <li class="nav__item"><a href="{{ config.repo_url }}" target="_blank" rel="noopener">{{ config.repo_name or 'Repo' }}</a></li>
+        {%- endif %}
+      </ul>
     </div>
-</nav>
-<!--  endblock -->
+  </nav>
+</div>
+<!-- endblock -->

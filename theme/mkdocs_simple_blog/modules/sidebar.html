@@ -1,26 +1,28 @@
 <!-- block sidebar -->
-<div class="navbar-expand-md" role="complementary">
-    {% macro toc_item(item) %}
-        {%- if item.level <= config.theme.navigation_depth %}
-            <li class="nav-item" data-bs-level="{{ item.level }}"><a href="{{ item.url }}" class="nav-link">{{ item.title }}</a>
-              <ul class="nav flex-column">
-                {%- for child in item.children %}
-                    {{- toc_item(child) }}
-                {%- endfor %}
-              </ul>
-            </li>
-        {%- endif %}
-    {%- endmacro %}
-    {% if config.theme.sidebar %}
-    <div class="sidebar navbar-collapse collapse card">
-        <ul class="nav flex-column">
-        {%- for item in page.toc %}
-            {{ toc_item(item) }}
-        {%- endfor %}
-        </ul>
-    </div>
-    {% endif %}
-</div>
+{% macro toc_item(item) %}
+  {%- if item.level <= (config.theme.navigation_depth or 2) %}
+  <li>
+    <a href="{{ item.url }}">{{ item.title }}</a>
+    {%- if item.children %}
+    <ul>
+      {%- for child in item.children %}{{ toc_item(child) }}{% endfor %}
+    </ul>
+    {%- endif %}
+  </li>
+  {%- endif %}
+{%- endmacro %}
+<details class="toc" open>
+  <summary><span class="toc__label">Index</span></summary>
+  <ul>
+    {%- for item in page.toc %}{{ toc_item(item) }}{% endfor %}
+  </ul>
+  <div class="toc__footer">
+    <a href="{{ nav.homepage.url | url }}">&larr; Zrugg zur Übersicht</a>
+    {%- if page.edit_url %}
+    <a href="{{ page.edit_url }}" target="_blank" rel="noopener">Biitrag bearbeite</a>
+    {%- endif %}
+  </div>
+</details>
 {% if (page and page.meta.blog_sidebar) or (config.theme.components and config.theme.components.blog_sidebar) %}
 {% include "modules/blog_sidebar.html" %}
 {% endif %}

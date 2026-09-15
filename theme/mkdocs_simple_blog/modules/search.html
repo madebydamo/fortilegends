@@ -1,23 +1,23 @@
 {% block search %}
 <!-- block search -->
-<section class="p-md-5 content-search">
-	<article class="search-box">
-		<p></p>
-		<h1 id="search">Search Results</h1>
-		<hr>
-
-		<form id="content_search" action="{{ base_url }}/search.html">
-			<span role="status" aria-live="polite" class="ui-helper-hidden-accessible"></span>
-			<input name="q" id="mkdocs-search-query" type="text" class="search-query search_input search-query ui-autocomplete-input"
-				placeholder="Search the Docs" autocomplete="off" autofocus title="Type search term here">
-		</form>
-
-		<div id="mkdocs-search-results" class="search-results" data-no-results-text="No results found">
-			Searching...
-		</div>
-
-	</article>
+<section class="post post--article post--no-aside" id="component-content">
+  <div class="post__layout">
+    <div class="post__body">
+      <div class="search">
+        <p class="search__kicker">Suche // {{ config.site_name }}</p>
+        <h1 class="search__title" id="search">Suche</h1>
+        <form id="content_search" action="{{ base_url }}/search.html">
+          <label class="search__label" for="mkdocs-search-query">Suechbegriff //</label>
+          <span role="status" aria-live="polite" class="sr-only"></span>
+          <input name="q" id="mkdocs-search-query" type="search" class="search__input"
+            placeholder="Was suechsch?" autocomplete="off" autofocus title="Suechbegriff igä">
+        </form>
+        <div id="mkdocs-search-results" class="search-results" data-no-results-text="Nüt gfunde.">
+          Suche…
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 <!-- endblock -->
-
 {% endblock %}
