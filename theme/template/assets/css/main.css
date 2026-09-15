@@ -619,8 +619,8 @@ h6 {
   pointer-events: none;
   opacity: 0;
   transform: translate3d(-105%, 0, 0);
+  transform-origin: 0 0;
   transition: transform 1.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
-  will-change: transform, opacity;
 }
 
 .intro__title.is-in {
@@ -637,9 +637,16 @@ h6 {
    the ball, each text line on a page-coloured backing so no grid line shows
    through the letters on the way */
 .intro__title.is-moving {
-  z-index: 4;
-  transform-origin: 0 0;
+  z-index: 4; /* under the page-ball (5), above in-flow page copy */
   transition: none;
+}
+
+/* Kickers stay in layout so the morph target does not jump; they must not
+   paint on the travelling letters (the leftover "2 / 24" was "sit 2024"). */
+.intro:has(.intro__title.is-moving) .intro__kicker,
+.intro:has(.intro__title.is-moving) .intro__label,
+.intro:has(.intro__title.is-moving) ~ .hero .hero__kicker {
+  visibility: hidden;
 }
 
 .intro__title span {
@@ -657,7 +664,10 @@ h6 {
 }
 
 .hero__title.is-hidden {
+  /* visibility, not only opacity: an opacity-0 copy still composited with
+     the travelling title and showed as a grey ghost of the same letters */
   opacity: 0;
+  visibility: hidden;
 }
 
 /* The ball on its way down the page and at rest next to the hero title. */
@@ -705,8 +715,7 @@ h6 {
 }
 
 /* ---------------------------------------------------------------------------
-   Stats band (front page): two small mono lines, then stats with a thin
-   left rule each. No box, no giant title.
+   Stats band (front page): fat title, then stats with a thin left rule each.
    ------------------------------------------------------------------------- */
 
 .stats {
@@ -714,21 +723,12 @@ h6 {
   border-bottom: 1px solid var(--line);
 }
 
-.stats__kicker,
-.stats__lead {
+.stats__title {
   margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  line-height: 1.6;
-  text-transform: uppercase;
-}
-
-.stats__kicker {
-  color: var(--muted);
-}
-
-.stats__lead {
-  margin-top: 6px;
+  font-size: clamp(48px, 8vw, 120px);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
 }
 
 .stats__grid {

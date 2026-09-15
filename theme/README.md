@@ -59,14 +59,13 @@ stats:                                                 # optional; defaults are 
   - { label: Legende, value: 23, caption: Mitglieder }  # caption is optional
   - { label: Bier, value: 1.2, unit: K }
   - { label: Status, value: Live }                      # text values work too
-stats_title: Proof in the archive.                     # optional small first line
-stats_text: Ziitkapsle vo de Forti-Legends             # optional second line, defaults to site_description
+stats_title: Legendär sit 2024                         # fat heading above the numbers
 ---
 ```
 
 Set `hero: false` or `stats: false` to hide a block. Without `stats` the theme
 shows `Events` (post count), `Jahre` (year folders), `Status // Live` and
-`Chronik // On`. The band is deliberately quiet: two small mono lines, then
+`Chronik // On`. The band is a fat title (default **Legendär sit 2024**), then
 the stats in a row (2 x 2 on tablets and phones), each with a thin left rule.
 Numbers count up when they scroll into view.
 

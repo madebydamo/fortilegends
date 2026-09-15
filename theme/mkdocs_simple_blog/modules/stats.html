@@ -22,8 +22,7 @@
 ] %}
 {%- endif %}
 <section class="stats" id="stats">
-  <p class="stats__kicker">{{ page.meta.stats_title or 'Proof in the archive.' }}</p>
-  <p class="stats__lead">{{ page.meta.stats_text or config.site_description or config.site_name }}</p>
+  <h2 class="stats__title">{{ page.meta.stats_title or 'Legendär sit 2024' }}</h2>
   <div class="stats__grid">
     {%- for s in stats %}
     {%- set v = s.value | string %}

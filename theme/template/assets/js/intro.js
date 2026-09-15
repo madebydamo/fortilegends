@@ -824,7 +824,7 @@ function boot(intro) {
       if (page.morph) {
         const m = page.morph;
         title.style.transform =
-          "translate(" + (m.dx * s).toFixed(1) + "px," + (m.dy * s).toFixed(1) + "px) scale(" + lerp(1, m.k, s).toFixed(4) + ")";
+          "translate3d(" + (m.dx * s).toFixed(1) + "px," + (m.dy * s).toFixed(1) + "px,0) scale(" + lerp(1, m.k, s).toFixed(4) + ")";
       }
       if (t >= 1) done();
     }

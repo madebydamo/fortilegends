@@ -25,7 +25,12 @@
       <a href="{{ page.edit_url }}" target="_blank" rel="noopener">Biitrag bearbeite</a>
       {%- endif %}
       {%- if config.site_url %}
-      <a href="{{ config.site_url }}">{{ config.site_url | replace('https://', '') | replace('http://', '') | trim('/') }}</a>
+      {%- set host = config.site_url | replace('https://', '') | replace('http://', '') | trim('/') %}
+      {#- mkdocs serve rewrites site_url to the bind address; skip that so
+          the footer never shows 0.0.0.0:8000 / localhost #}
+      {%- if host and '0.0.0.0' not in host and not host.startswith('127.0.0.1') and not host.startswith('localhost') and not host.startswith('[::]') %}
+      <a href="{{ config.site_url }}">{{ host }}</a>
+      {%- endif %}
       {%- endif %}
       {%- if config.repo_url %}
       <a href="{{ config.repo_url }}" target="_blank" rel="noopener">{{ config.repo_name or 'Repository' }}</a>
