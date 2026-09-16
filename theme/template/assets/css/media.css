@@ -373,4 +373,14 @@
   .intro__hint {
     bottom: 14px;
   }
+
+  .intro__adprompt {
+    width: calc(100vw - 24px);
+    padding: 22px 18px 18px;
+    box-shadow: 6px 6px 0 var(--text);
+  }
+
+  .intro__adprompt-ask {
+    font-size: 18px;
+  }
 }

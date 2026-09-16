@@ -78,11 +78,14 @@ posts (thin black outlines keep the white parts visible) and a red / navy
 handball with white speed lines and the site name as its wordmark, held at
 hand height. The visitor throws it into the goal:
 
-- **Phone**: swipe in any direction. The ball follows that direction and
-  curves into the goal; it can't miss. A tap throws straight. Tilt the
-  phone a little: the camera moves the same way as the mouse on a computer.
-  On iPhone the first tap asks for motion access.
+- **Phone**: swipe in any direction. Aimed at the goal, the ball curves in
+  and can't miss. A swipe that clearly misses well left or right of the goal
+  can hit an advertising board; a card then asks if you want to open the
+  advertiser. A tap throws straight. Tilt the phone a little: the camera
+  moves the same way as the mouse on a computer. On iPhone the first tap
+  asks for motion access.
 - **Desktop**: point the mouse (a dotted arrow shows the direction) and click.
+  Point clearly past the posts at a board to throw into that advert.
 
 Then the movie: the net swings, the ball drops, the title slides in over the
 scene, and the ball rolls back and on down the page in one continuous motion.
@@ -105,7 +108,19 @@ Above the goal hangs a hall scoreboard: team names, score, period, the game
 clock (counts up to the end of the half and stops there) and a penalty timer
 (player number and time, counts down and stops together with the game
 clock). A goal adds one point to the home score. It is drawn in code (no
-image), so the numbers are configurable:
+image), so the numbers are configurable.
+
+Sports advertising boards hang on the same wall as the scoreboard, one
+on each side, facing the hall (not turned toward the camera). Top and
+bottom line up with the scoreboard; there is no pole. Type is large
+enough to read from the hall (`damianmoser.ch`, *ZU VERMIETEN*, then the
+campaign lines), with the headline stack at one size. The left
+board is **IT Sponsoring** in the JetBrains Mono / film-grain look of
+[damianmoser.ch](https://damianmoser.ch/), with a live fake terminal
+(`curl`, `apt`, `docker run`, …). The right board is for sale
+(*Hier könnte ihre Werbung stehen*). A throw that clearly misses the goal
+and hits a board opens a confirm card: a short question and a line of ad
+copy. Aiming into the goal still always scores.
 
 The 3D part is `assets/js/intro.min.js` (source `template/assets/js/intro.js`),
 an ES module that loads three.js from jsdelivr through an import map in
@@ -136,6 +151,15 @@ intro:
     clock: 29:30                             # game clock, counts up to 30:00 (or 60:00)
     penalty: 1:09                            # penalty time, counts down
     penalty_number: 3                        # number of the penalised player
+  ads:                                       # boards left/right of the scoreboard (ads: false hides them)
+    left:
+      label: IT Sponsoring
+      url: https://damianmoser.ch/
+      style: terminal                        # JetBrains Mono + noise (damianmoser.ch)
+    right:
+      label: Hier könnte ihre Werbung stehen
+      url: ""                                # empty: hittable, but no window
+      style: sale                            # red/white sports board
 ```
 
 Set `intro: false` to turn the stage off.

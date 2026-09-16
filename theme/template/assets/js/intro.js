@@ -3,8 +3,11 @@
  * Throw the handball into the goal. Phone: swipe in any direction; tilting
  * the phone moves the camera a little, the same way as the mouse on a
  * computer. Desktop: point with the mouse (an arrow shows the direction) and
- * click. The ball is thrown from hand height, always curves into the goal, the
- * net swings, the ball drops and rolls back towards the visitor. The title slides in over the
+ * click. The ball is thrown from hand height. Aimed at the goal it curves in
+ * and cannot miss. Aimed left or right of the goal it can hit a sideline
+ * advertising board (only if the aim is on the visible board, not the
+ * posts). A hit asks whether to open that advertiser. The net
+ * swings, the ball drops and rolls back towards the visitor. The title slides in over the
  * scene at the hit. The ball rolls back and on down the page in one motion
  * while the page scrolls along and the title travels down and turns into the
  * hero title; it all ends with the hero at the top of the screen and the
@@ -14,7 +17,10 @@
  *
  * Above the goal hangs a hall scoreboard (a canvas texture): team names,
  * score, period, game clock counting up and a penalty timer counting down.
- * The score goes up by one when the ball hits the net.
+ * The score goes up by one when the ball hits the net. Sports boards hang
+ * to the left and right of the scoreboard, top and bottom flush with it,
+ * with no poles (left: IT sponsoring with the damianmoser.ch look and a
+ * live fake terminal; right: for sale).
  *
  * three.js comes from jsdelivr through the import map in base.html. The
  * models are loaded from the paths given in the front matter (intro.ball_model,
@@ -47,6 +53,13 @@ const BOARD_W = 2.4; // scoreboard size (m)
 const BOARD_H = 1.8;
 const BOARD_Z = -1.3; // behind the net
 const BOARD_LIFT = 0.28; // gap between the crossbar and the board
+const SCORE_BOTTOM = GOAL_H + POST + BOARD_LIFT;
+const SCORE_TOP = SCORE_BOTTOM + BOARD_H;
+const AD_W = 1.1; // advertising boards on the scoreboard wall (m)
+const AD_H = BOARD_H; // top and bottom flush with the scoreboard
+const AD_D = 0.12;
+const AD_LIFT = SCORE_BOTTOM; // hanging, no pole
+const AD_GAP = 0.2; // gap between scoreboard edge and a board
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -61,6 +74,11 @@ function boot(intro) {
   const aimLine = aim ? aim.querySelector("line") : null;
   const aimHead = aim ? aim.querySelector("polygon") : null;
   const heroTitle = document.querySelector(".hero__title");
+  const adPrompt = intro.querySelector(".intro__adprompt");
+  const adPromptAsk = adPrompt ? adPrompt.querySelector("[data-ad-ask]") : null;
+  const adPromptBlurb = adPrompt ? adPrompt.querySelector("[data-ad-blurb]") : null;
+  const adPromptGo = adPrompt ? adPrompt.querySelector("[data-ad-go]") : null;
+  const adPromptNo = adPrompt ? adPrompt.querySelector("[data-ad-no]") : null;
   if (!stage) return;
 
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -212,9 +230,17 @@ function boot(intro) {
   let net = goal.userData.net; // { apply(impact, push, amp) }
   scene.add(goal);
 
-  /* Scoreboard above the goal */
+  /* Scoreboard above the goal, advertising boards to its left and right */
   const board = intro.dataset.board === "off" ? null : buildBoard(boardConfig(intro.dataset));
   if (board) scene.add(board.object);
+  const ads = intro.dataset.ads === "off" ? null : buildAds(adsConfig(intro.dataset));
+  if (ads) {
+    scene.add(ads.left.object);
+    scene.add(ads.right.object);
+  }
+  let fromAd = false; // drop after hitting a board: do not trap the ball in the goal
+  let adPromptOpen = false;
+  let adPromptHref = "";
 
   /* ------------------------------------------------------------- loading */
   const loader = new GLTFLoader();
@@ -346,6 +372,7 @@ function boot(intro) {
     camera.fov = aspect < 0.8 ? 68 : aspect < 1.3 ? 56 : 46;
     camRest.pos.z = aspect < 0.8 ? 6.3 : 6.2;
     camera.updateProjectionMatrix();
+    if (ads) placeAds(ads);
     if (state === "done") {
       const spot = pageSpot();
       placePageBall(spot.cx, spot.cy, spot.r, spot.r);
@@ -640,21 +667,81 @@ function boot(intro) {
   window.addEventListener("keydown", stopFollow);
 
   /* --------------------------------------------------------------- throw */
+  /* Ads hang on the wall behind the goal. A camera ray through the goal
+   * mouth (or the posts) is always a goal shot — even if it would later
+   * hit a board. A board is only targeted if the aim misses the mouth
+   * and actually hits that board. */
+  function aimNDC(d) {
+    let x;
+    let y;
+    if (pointer) {
+      x = pointer.x;
+      y = pointer.y;
+    } else {
+      const b = ballScreen();
+      x = b.x + d.x * 220;
+      y = b.y + d.y * 220;
+    }
+    const w = stage.clientWidth || 1;
+    const h = stage.clientHeight || 1;
+    return new THREE.Vector2((x / w) * 2 - 1, -(y / h) * 2 + 1);
+  }
+
+  function rayThroughGoal(ray) {
+    if (Math.abs(ray.direction.z) < 1e-6) return false;
+    const t = (0 - ray.origin.z) / ray.direction.z;
+    if (t < 0.05) return false;
+    const x = ray.origin.x + ray.direction.x * t;
+    const y = ray.origin.y + ray.direction.y * t;
+    const pad = 0.18;
+    return Math.abs(x) <= GOAL_W / 2 + POST + pad && y >= -pad && y <= GOAL_H + POST + pad;
+  }
+
+  function aimedAd(d) {
+    if (!ads) return null;
+    raycaster.setFromCamera(aimNDC(d), camera);
+    if (rayThroughGoal(raycaster.ray)) return null;
+    const hitL = raycaster.intersectObject(ads.left.object, true);
+    const hitR = raycaster.intersectObject(ads.right.object, true);
+    const tL = hitL.length ? hitL[0].distance : Infinity;
+    const tR = hitR.length ? hitR[0].distance : Infinity;
+    if (tL === Infinity && tR === Infinity) return null;
+    return tL < tR ? ads.left : ads.right;
+  }
+
+  function touchingAd(ad) {
+    ad.object.updateMatrixWorld(true);
+    tmp.copy(ball.position);
+    ad.object.worldToLocal(tmp);
+    const hx = AD_W / 2 + BALL_R;
+    const hy = AD_H / 2 + BALL_R;
+    const hz = AD_D / 2 + BALL_R;
+    return Math.abs(tmp.x) <= hx && Math.abs(tmp.y) <= hy && Math.abs(tmp.z) <= hz + 0.06;
+  }
+
   function throwBall(d) {
     if (state !== "aim") return;
     const ax = d.x;
     const ay = -d.y; // up is positive
     const power = d.power;
-    const halfInner = GOAL_W / 2 - BALL_R - 0.18;
-    const tx = clamp(ax * 1.4, -1, 1) * halfInner + (Math.random() - 0.5) * 0.12;
-    const tyN = clamp(0.5 + ay * 0.62, 0.05, 0.94);
-    const ty = BALL_R + 0.03 + tyN * (GOAL_H - 2 * BALL_R - 0.1);
-    const P3 = new THREE.Vector3(tx, ty, netZ(ty) + BALL_R * 0.55);
+    const aimed = aimedAd(d);
     const P0 = ball.position.clone();
     const reach = 1.3 + 1.3 * power;
+    let P3;
+    let kind = "goal";
+    if (aimed) {
+      kind = "ad";
+      P3 = aimed.hitPoint(ay);
+    } else {
+      const halfInner = GOAL_W / 2 - BALL_R - 0.18;
+      const tx = clamp(ax * 1.4, -1, 1) * halfInner + (Math.random() - 0.5) * 0.12;
+      const tyN = clamp(0.5 + ay * 0.62, 0.05, 0.94);
+      const ty = BALL_R + 0.03 + tyN * (GOAL_H - 2 * BALL_R - 0.1);
+      P3 = new THREE.Vector3(tx, ty, netZ(ty) + BALL_R * 0.55);
+    }
     const P1 = P0.clone().add(new THREE.Vector3(ax * reach, Math.max(ay, -0.3) * reach + 0.35, -reach * 0.8));
-    const P2 = P3.clone().add(new THREE.Vector3(-ax * 0.4, 0.45 + Math.max(ay, 0) * 0.45, 2.2));
-    flight = { P0, P1, P2, P3, t: 0, dur: 0.85 + 0.35 * (1 - power) };
+    const P2 = P3.clone().add(new THREE.Vector3(kind === "ad" ? ax * 0.2 : -ax * 0.4, 0.45 + Math.max(ay, 0) * 0.45, kind === "ad" ? 0.9 : 2.2));
+    flight = { P0, P1, P2, P3, t: 0, dur: 0.85 + 0.35 * (1 - power), kind, ad: aimed };
     state = "flight";
     intro.classList.remove("is-aiming");
     hideAim();
@@ -679,6 +766,13 @@ function boot(intro) {
     ballMesh.rotateOnWorldAxis(tmp2, dist / BALL_R);
   }
 
+  function showTitle() {
+    if (title) {
+      title.classList.remove("is-out");
+      title.classList.add("is-in");
+    }
+  }
+
   function impact() {
     const f = flight;
     const vel = f.P3.clone().sub(f.P2).multiplyScalar(3 / f.dur);
@@ -689,13 +783,82 @@ function boot(intro) {
       bounces: 0,
       t: 0,
     };
+    fromAd = false;
     flight = null;
     state = "drop";
     board && board.goal();
-    if (title) {
-      title.classList.remove("is-out");
-      title.classList.add("is-in");
+    showTitle();
+  }
+
+  function impactAd(ad) {
+    const f = flight;
+    const vel = f.P3.clone().sub(f.P2).multiplyScalar(3 / f.dur);
+    const inward = ad.side < 0 ? 0.85 : -0.85;
+    drop = {
+      v: new THREE.Vector3(inward + vel.x * 0.08, 0.85, 1.35 + Math.abs(vel.z) * 0.05),
+      bounces: 0,
+      t: 0,
+    };
+    fromAd = true;
+    ad.flash();
+    askAdvertiser(ad);
+    flight = null;
+    state = "drop";
+    showTitle();
+  }
+
+  function adHost(url) {
+    try {
+      return new URL(url, window.location.href).host.replace(/^www\./, "");
+    } catch (e) {
+      return url;
     }
+  }
+
+  function closeAdPrompt() {
+    adPromptOpen = false;
+    adPromptHref = "";
+    if (adPrompt && adPrompt.open) adPrompt.close();
+  }
+
+  function askAdvertiser(ad) {
+    const href = String((ad && ad.url) || "").trim();
+    if (!href || !adPrompt) return;
+    const host = adHost(href);
+    const isIT = ad.style === "terminal" || /damianmoser\.ch/i.test(href);
+    adPromptHref = href;
+    if (adPromptAsk) adPromptAsk.textContent = "Wottsch " + host + " ufmache?";
+    if (adPromptBlurb) {
+      adPromptBlurb.textContent = isIT
+        ? "damianmoser.ch isch de IT-Sponsor vo de Forti-Legends."
+        : String(ad.label || "Werbung für d Forti-Legends.");
+    }
+    adPromptOpen = true;
+    follow = false;
+    if (adPrompt.open) adPrompt.close();
+    if (typeof adPrompt.showModal === "function") adPrompt.showModal();
+    else adPrompt.setAttribute("open", "");
+  }
+
+  if (adPromptGo) {
+    adPromptGo.addEventListener("click", (e) => {
+      e.preventDefault();
+      const href = adPromptHref;
+      closeAdPrompt();
+      openAdvertiser(href);
+    });
+  }
+  if (adPromptNo) {
+    adPromptNo.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeAdPrompt();
+    });
+  }
+  if (adPrompt) {
+    adPrompt.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closeAdPrompt();
+    });
   }
 
   function startRoll() {
@@ -742,7 +905,7 @@ function boot(intro) {
       if (A.height > 0 && B.height > 0) morph = { dx: B.left - A.left, dy: B.top - A.top, k: B.height / A.height };
     }
     page = { cx0, cy0, r0, to, t: 0, dur, prevX: cx0, prevY: cy0, scroll0, scrollEnd, morph };
-    follow = true;
+    follow = !adPromptOpen;
     roll = null;
     state = "page";
   }
@@ -764,6 +927,7 @@ function boot(intro) {
     // end state right away (scroll before the throw, reduced motion)
     flight = drop = roll = page = null;
     netHit = null;
+    fromAd = false;
     net && net.apply(null, null, 0);
     intro.classList.remove("is-aiming");
     hideAim();
@@ -782,8 +946,11 @@ function boot(intro) {
     ball.position.copy(START);
     ballMesh.rotation.set(0.3, 0.8, 0.1);
     netHit = null;
+    fromAd = false;
     net && net.apply(null, null, 0);
     board && board.restart();
+    ads && ads.restart();
+    closeAdPrompt();
     resetTitle();
     ignoreScrollUntil = performance.now() + 1800;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -829,7 +996,8 @@ function boot(intro) {
       const prev = ball.position.clone();
       bezier(flight, t, ball.position);
       spinBy(tmp.copy(ball.position).sub(prev));
-      if (flight.t >= 1) impact();
+      if (flight.kind === "ad" && flight.ad && (touchingAd(flight.ad) || flight.t >= 1)) impactAd(flight.ad);
+      else if (flight.t >= 1) impact();
     } else if (state === "drop" && drop) {
       const v = drop.v;
       drop.t += dt;
@@ -844,15 +1012,17 @@ function boot(intro) {
         v.z *= 0.75;
         drop.bounces++;
       }
-      const minZ = netZ(p.y) + BALL_R;
-      if (p.z < minZ) {
-        p.z = minZ;
-        v.z = Math.abs(v.z) * 0.4;
-      }
-      const maxX = GOAL_W / 2 - BALL_R - 0.05;
-      if (Math.abs(p.x) > maxX) {
-        p.x = Math.sign(p.x) * maxX;
-        v.x = -v.x * 0.4;
+      if (!fromAd) {
+        const minZ = netZ(p.y) + BALL_R;
+        if (p.z < minZ) {
+          p.z = minZ;
+          v.z = Math.abs(v.z) * 0.4;
+        }
+        const maxX = GOAL_W / 2 - BALL_R - 0.05;
+        if (Math.abs(p.x) > maxX) {
+          p.x = Math.sign(p.x) * maxX;
+          v.x = -v.x * 0.4;
+        }
       }
       spinBy(tmp.copy(p).sub(prev));
       if ((drop.bounces >= 2 && Math.abs(v.y) < 1.4 && p.y <= BALL_R + 0.01) || drop.t > 1.8) startRoll();
@@ -940,6 +1110,7 @@ function boot(intro) {
     last = now;
     update(dt);
     if (visible && board) board.tick(now);
+    if (visible && ads) ads.tick(now);
     if (visible) renderer.render(scene, camera);
     if (state === "roll" || state === "page" || state === "done") renderPage();
     requestAnimationFrame(frame);
@@ -1332,6 +1503,33 @@ function boardConfig(ds) {
   };
 }
 
+/* Front matter -> advertising boards (see modules/intro.html). */
+function adsConfig(ds) {
+  return {
+    left: {
+      label: ds.adLeftLabel || "IT Sponsoring",
+      url: ds.adLeftUrl || "https://damianmoser.ch/",
+      style: ds.adLeftStyle || "terminal",
+    },
+    right: {
+      label: ds.adRightLabel || "Hier könnte ihre Werbung stehen",
+      url: ds.adRightUrl || "",
+      style: ds.adRightStyle || "sale",
+    },
+  };
+}
+
+function openAdvertiser(url) {
+  const href = String(url || "").trim();
+  if (!href) return;
+  try {
+    const w = window.open(href, "_blank", "noopener,noreferrer");
+    if (w) w.opener = null;
+  } catch (e) {
+    /* popup blocked */
+  }
+}
+
 /* A hall scoreboard hanging above the goal: a black box with a canvas
  * texture that shows LED-dot digits. tick() redraws it once a second (only
  * when a shown value changes), goal() adds a point, restart() resets it. The
@@ -1445,6 +1643,582 @@ function buildBoard(cfg) {
       score = cfg.score.slice();
       t0 = performance.now();
       lastKey = "";
+    },
+  };
+}
+
+/* ===================================================== advertising boards */
+
+let adNoiseTile = null;
+let jetBrainsReady = false;
+let jetBrainsPromise = null;
+
+function ensureJetBrains() {
+  if (jetBrainsReady) return Promise.resolve();
+  if (jetBrainsPromise) return jetBrainsPromise;
+  jetBrainsPromise = new Promise((resolve) => {
+    const href = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap";
+    const already = [...document.querySelectorAll("link[rel='stylesheet']")].some((l) => (l.href || "").includes("JetBrains+Mono"));
+    if (already) {
+      resolve();
+      return;
+    }
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.onload = resolve;
+    link.onerror = resolve;
+    document.head.appendChild(link);
+  })
+    .then(() => (document.fonts && document.fonts.load ? document.fonts.load("700 64px 'JetBrains Mono'") : null))
+    .catch(() => {})
+    .then(() => {
+      jetBrainsReady = true;
+    });
+  return jetBrainsPromise;
+}
+
+function getAdNoise() {
+  if (adNoiseTile) return adNoiseTile;
+  const s = 256;
+  const c = document.createElement("canvas");
+  c.width = s;
+  c.height = s;
+  const ctx = c.getContext("2d");
+  const id = ctx.createImageData(s, s);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() * 255) | 0;
+    d[i] = d[i + 1] = d[i + 2] = n;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(id, 0, 0);
+  adNoiseTile = c;
+  return c;
+}
+
+function wrapLines(ctx, text, maxWidth) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const next = line ? line + " " + w : w;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line);
+      line = w;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function paintScrews(ctx, W, H) {
+  ctx.fillStyle = "#4a4a4a";
+  ctx.strokeStyle = "#2a2a2a";
+  ctx.lineWidth = 2;
+  for (const [x, y] of [[28, 28], [W - 28, 28], [28, H - 28], [W - 28, H - 28]]) {
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y);
+    ctx.lineTo(x + 5, y);
+    ctx.moveTo(x, y - 5);
+    ctx.lineTo(x, y + 5);
+    ctx.stroke();
+  }
+}
+
+function paintScanlines(ctx, W, H) {
+  ctx.fillStyle = "rgba(0,0,0,0.32)";
+  for (let y = 0; y < H; y += 4) ctx.fillRect(0, y + 2, W, 1.2);
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 0.6);
+}
+
+function paintNoise(ctx, W, H, alpha, ox, oy) {
+  const tile = getAdNoise();
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = "overlay";
+  const x = -((ox % tile.width) + tile.width) % tile.width;
+  const y = -((oy % tile.height) + tile.height) % tile.height;
+  for (let px = x; px < W; px += tile.width) {
+    for (let py = y; py < H; py += tile.height) ctx.drawImage(tile, px, py);
+  }
+  ctx.restore();
+}
+
+const TERM_PROMPT = "damo@portfolio:~$ ";
+const TERM_JOBS = [
+  {
+    cmd: "curl -s https://damianmoser.ch/whoami",
+    lines: [
+      "Damian Moser",
+      "IT-Sponsor // Forti-Legends",
+      "ETH Zürich · Robotics",
+      "open-source tinkerer",
+    ],
+  },
+  {
+    cmd: "sudo apt-get update",
+    lines: [
+      "Hit:1 https://deb.debian.org/debian stable InRelease",
+      "Get:2 https://download.docker.com/linux/debian stable InRelease [48.5 kB]",
+      "Fetched 214 kB in 0s (1,204 kB/s)",
+      "Reading package lists... Done",
+    ],
+    pace: 0.08,
+  },
+  {
+    cmd: "sudo apt-get install -y docker.io docker-compose-plugin",
+    lines: [
+      "Reading package lists... Done",
+      "Building dependency tree... Done",
+      "docker.io is already the newest version (27.3.1-1).",
+      "docker-compose-plugin is already the newest version (2.32.4-1).",
+      "0 upgraded, 0 newly installed, 0 to remove.",
+    ],
+    pace: 0.07,
+  },
+  {
+    cmd: "docker run --rm -p 8000:80 madebydamo/fortilegends:latest",
+    lines: [
+      "Unable to find image 'madebydamo/fortilegends:latest' locally",
+      "latest: Pulling from madebydamo/fortilegends",
+      "4f4fb700ef54: Pull complete",
+      "a3ed95caeb02: Pull complete",
+      "Digest: sha256:forti…legends",
+      "Status: Downloaded newer image",
+      " => hall is live on http://0.0.0.0:8000",
+    ],
+    pace: 0.09,
+  },
+  {
+    cmd: "curl -I https://damianmoser.ch/",
+    lines: [
+      "HTTP/2 200",
+      "server: nginx",
+      "content-type: text/html; charset=utf-8",
+      "x-powered-by: a POSIX terminal",
+      "x-sponsor-of: Forti-Legends",
+    ],
+  },
+  {
+    cmd: "docker ps --format 'table {{.Names}}\\t{{.Status}}'",
+    lines: [
+      "NAMES             STATUS",
+      "fortilegends      Up 3 years (healthy)",
+      "portrait          Up (healthy)",
+      "swag              Up 2 weeks",
+    ],
+  },
+  {
+    cmd: "curl -s https://damianmoser.ch/skills",
+    lines: [
+      "NixOS · Docker · Rust · TypeScript",
+      "halls, blogs, and POSIX toys",
+      "booking: damianmoser.ch",
+    ],
+  },
+  {
+    cmd: "ssh forti@legends 'echo ready'",
+    lines: ["ready", "IT sponsoring is live."],
+  },
+];
+
+function seedTerm() {
+  return {
+    job: 0,
+    phase: "type",
+    typed: 0,
+    outI: 0,
+    acc: 0,
+    buf: [TERM_PROMPT + "whoami", "damo", "", TERM_PROMPT + "hostname", "damianmoser.ch", ""],
+    sig: "",
+  };
+}
+
+function tickTerm(term, dt, now, freeze) {
+  if (freeze) {
+    if (term.sig !== "static") {
+      term.buf = [
+        TERM_PROMPT + "curl -s https://damianmoser.ch/whoami",
+        "Damian Moser",
+        "IT-Sponsor // Forti-Legends",
+        "",
+        TERM_PROMPT + "docker run --rm madebydamo/fortilegends:latest",
+        " => hall is live on http://0.0.0.0:8000",
+      ];
+      term.sig = "static";
+      return true;
+    }
+    return false;
+  }
+  const job = TERM_JOBS[term.job % TERM_JOBS.length];
+  term.acc += dt;
+  const blink = Math.floor(now / 530) % 2 === 0;
+  if (term.phase === "type") {
+    while (term.acc >= 0.028 && term.typed < job.cmd.length) {
+      term.acc -= 0.028;
+      term.typed++;
+    }
+    const line = TERM_PROMPT + job.cmd.slice(0, term.typed) + (blink ? "█" : " ");
+    if (!term.buf.length) term.buf.push(line);
+    else term.buf[term.buf.length - 1] = line;
+    if (term.typed >= job.cmd.length) {
+      term.buf[term.buf.length - 1] = TERM_PROMPT + job.cmd;
+      term.phase = "hold";
+      term.acc = 0;
+    }
+  } else if (term.phase === "hold") {
+    if (term.acc > 0.22) {
+      term.phase = "out";
+      term.acc = 0;
+      term.outI = 0;
+    }
+  } else if (term.phase === "out") {
+    const pace = job.pace || 0.055;
+    while (term.acc >= pace && term.outI < job.lines.length) {
+      term.acc -= pace;
+      term.buf.push(job.lines[term.outI++]);
+      if (term.buf.length > 56) term.buf.splice(0, term.buf.length - 48);
+    }
+    if (term.outI >= job.lines.length) {
+      term.phase = "pause";
+      term.acc = 0;
+    }
+  } else if (term.acc > 1.15) {
+    term.job = (term.job + 1) % TERM_JOBS.length;
+    term.phase = "type";
+    term.typed = 0;
+    term.outI = 0;
+    term.acc = 0;
+    term.buf.push("");
+    term.buf.push("");
+  }
+  const sig = term.job + "|" + term.phase + "|" + term.typed + "|" + term.outI + "|" + (blink ? "1" : "0") + "|" + term.buf.length;
+  const dirty = sig !== term.sig;
+  term.sig = sig;
+  return dirty;
+}
+
+function wrapChars(ctx, text, maxW) {
+  if (!text) return [""];
+  if (ctx.measureText(text).width <= maxW) return [text];
+  const out = [];
+  let line = "";
+  const tokens = text.match(/\S+|\s+/g) || [text];
+  const flush = () => {
+    if (line) out.push(line.replace(/\s+$/, ""));
+    line = "";
+  };
+  const hard = (tok) => {
+    for (const ch of tok) {
+      if (line && ctx.measureText(line + ch).width > maxW) {
+        flush();
+        line = ch;
+      } else line += ch;
+    }
+  };
+  for (const tok of tokens) {
+    if (ctx.measureText(line + tok).width <= maxW) {
+      line += tok;
+      continue;
+    }
+    flush();
+    const piece = tok.replace(/^\s+/, "");
+    if (!piece) continue;
+    if (ctx.measureText(piece).width <= maxW) line = piece;
+    else hard(piece);
+  }
+  flush();
+  return out.length ? out : [""];
+}
+
+function fitHeadline(ctx, lines, maxW, startSize, font) {
+  let size = startSize;
+  ctx.font = font.replace("$", size);
+  const longest = lines.reduce((m, l) => Math.max(m, ctx.measureText(l).width), 0);
+  if (longest > maxW) size = Math.max(26, Math.floor((size * maxW) / longest));
+  ctx.font = font.replace("$", size);
+  return size;
+}
+
+function fillFit(ctx, text, x, y, maxW, want, font) {
+  let size = want;
+  ctx.font = font.replace("$", size);
+  let w = ctx.measureText(text).width;
+  if (w > maxW && w > 0) {
+    size = Math.max(28, Math.floor((want * maxW) / w));
+    ctx.font = font.replace("$", size);
+    w = ctx.measureText(text).width;
+  }
+  if (w > maxW && w > 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(maxW / w, 1);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+    return size;
+  }
+  ctx.fillText(text, x, y);
+  return size;
+}
+
+function headlineLines(label) {
+  const raw = String(label || "IT Sponsoring").trim();
+  if (/^it\s*sponsoring$/i.test(raw)) return ["IT", "SPONSORING"];
+  if (raw.toLowerCase() === "hier könnte ihre werbung stehen") return ["HIER KÖNNTE", "IHRE WERBUNG", "STEHEN"];
+  const parts = raw.split(/\n/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 1) return parts.map((s) => s.toUpperCase());
+  return [raw.toUpperCase()];
+}
+
+function drawTermPane(ctx, x, y, w, h, term, mono) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(x, y, w, h);
+  const size = 24;
+  ctx.font = "500 " + size + "px " + mono;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  const lh = size * 1.32;
+  const maxW = w - 20;
+  const wrapped = [];
+  for (const line of term.buf) {
+    const parts = wrapChars(ctx, line, maxW);
+    for (const p of parts) wrapped.push({ text: p, prompt: line.startsWith(TERM_PROMPT) });
+  }
+  const maxLines = Math.max(1, Math.floor((h - 16) / lh));
+  const view = wrapped.slice(Math.max(0, wrapped.length - maxLines));
+  let ty = y + 10;
+  for (const row of view) {
+    ctx.fillStyle = row.prompt ? "#fff" : "#aaa";
+    ctx.fillText(row.text, x + 10, ty);
+    ty += lh;
+  }
+  ctx.restore();
+}
+
+function drawTerminalAd(ctx, W, H, label, now, flash, term) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#222";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(4, 4, W - 8, H - 8);
+  ctx.strokeStyle = "#e11c1e";
+  ctx.lineWidth = 10;
+  ctx.strokeRect(18, 18, W - 36, H - 36);
+
+  const mono = jetBrainsReady ? "'JetBrains Mono', monospace" : "'Roboto Mono', ui-monospace, monospace";
+  const pad = Math.round(W * 0.06);
+  const maxW = W - pad * 2;
+  const cx = W / 2;
+  const head = ["damianmoser", ".ch"].concat(headlineLines(label));
+  const size = fitHeadline(ctx, head, maxW, Math.round(W * 0.12), "800 $px " + mono);
+  const lh = size * 1.05;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fff";
+  let y = pad + size * 0.62;
+  for (let i = 0; i < head.length; i++) {
+    if (i === 2) {
+      ctx.fillStyle = "#e11c1e";
+      ctx.fillRect(pad + 8, y - lh * 0.42, maxW - 16, 5);
+      y += 8;
+      ctx.fillStyle = "#fff";
+    }
+    ctx.fillText(head[i], cx, y);
+    y += lh;
+  }
+
+  const termTop = y + 10;
+  drawTermPane(ctx, pad, termTop, W - pad * 2, Math.max(80, H - termTop - pad), term, mono);
+
+  paintScanlines(ctx, W, H);
+  paintNoise(ctx, W, H, 0.16, (now * 0.035) % 256, (now * 0.021) % 256);
+  if (flash > 0) {
+    ctx.fillStyle = "rgba(255,255,255," + (0.42 * flash).toFixed(3) + ")";
+    ctx.fillRect(0, 0, W, H);
+  }
+  paintScrews(ctx, W, H);
+}
+
+function drawSaleAd(ctx, W, H, label, now, flash) {
+  ctx.fillStyle = "#c1121f";
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.rotate(-0.48);
+  for (let i = -H; i < H; i += 64) {
+    ctx.fillStyle = i % 128 === 0 ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.1)";
+    ctx.fillRect(-W, i, W * 2, 28);
+  }
+  ctx.restore();
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(4, 4, W - 8, H - 8);
+  ctx.strokeStyle = "#ffd23a";
+  ctx.lineWidth = 10;
+  ctx.strokeRect(20, 20, W - 40, H - 40);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(34, 34, W - 68, H - 68);
+
+  const face = "Inter, 'Arial Black', Arial, sans-serif";
+  const pad = Math.round(W * 0.08);
+  const maxW = W - pad * 2;
+  const cx = W / 2;
+  const rent = ["ZU", "VERMIETEN"];
+  const rentSize = fitHeadline(ctx, rent, maxW - 20, Math.round(W * 0.14), "900 $px " + face);
+  const rentLh = rentSize * 1.05;
+  const plateH = Math.round(rentLh * 2 + rentSize * 0.55);
+
+  ctx.fillStyle = "#ffd23a";
+  ctx.fillRect(pad, pad, maxW, plateH);
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 6;
+  ctx.strokeRect(pad + 4, pad + 4, maxW - 8, plateH - 8);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#111";
+  ctx.font = "900 " + rentSize + "px " + face;
+  let y = pad + rentSize * 0.72;
+  ctx.fillText(rent[0], cx, y);
+  y += rentLh;
+  ctx.fillText(rent[1], cx, y);
+
+  const lines = headlineLines(label);
+  const size = fitHeadline(ctx, lines, maxW, Math.round(W * 0.115), "900 $px " + face);
+  const lh = size * 1.08;
+  y = pad + plateH + lh * 0.85;
+  ctx.fillStyle = "#fff";
+  ctx.shadowColor = "rgba(0,0,0,0.45)";
+  ctx.shadowBlur = 12;
+  for (const line of lines) {
+    ctx.fillText(line, cx, y);
+    y += lh;
+  }
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#ffd23a";
+  fillFit(ctx, "FORTI-LEGENDS", cx, H - pad - Math.round(W * 0.08), maxW, Math.round(W * 0.055), "800 $px " + face);
+
+  paintScanlines(ctx, W, H);
+  paintNoise(ctx, W, H, 0.05, 0, 0);
+  if (flash > 0) {
+    ctx.fillStyle = "rgba(255,255,255," + (0.42 * flash).toFixed(3) + ")";
+    ctx.fillRect(0, 0, W, H);
+  }
+  paintScrews(ctx, W, H);
+}
+
+function buildAdBoard(cfg, side) {
+  const W = 800;
+  const H = Math.round((W * AD_H) / AD_W);
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d");
+  const texture = new THREE.CanvasTexture(c);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+
+  const object = new THREE.Group();
+  object.userData.ad = null; // filled below
+  const dark = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.7, metalness: 0.12 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(AD_W + 0.08, AD_H + 0.08, AD_D), dark);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  outline(body);
+  object.add(body);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(AD_W, AD_H), new THREE.MeshBasicMaterial({ map: texture }));
+  face.position.z = AD_D / 2 + 0.002;
+  object.add(face);
+
+  const style = cfg.style || "sale";
+  const term = style === "terminal" ? seedTerm() : null;
+  const freeze = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let flashUntil = 0;
+  let lastKey = "";
+  let lastNow = 0;
+
+  function draw(now) {
+    const dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.016;
+    lastNow = now;
+    const flash = flashUntil > now ? clamp((flashUntil - now) / 220, 0, 1) : 0;
+    const termDirty = term ? tickTerm(term, dt, now, freeze) : false;
+    const key = style + "|" + cfg.label + "|" + jetBrainsReady + "|" + flash.toFixed(2) + "|" + (term ? term.sig : Math.floor(now / 400));
+    if (key === lastKey && !termDirty) return;
+    lastKey = key;
+    if (style === "terminal") drawTerminalAd(ctx, W, H, cfg.label, now, flash, term);
+    else drawSaleAd(ctx, W, H, cfg.label, now, flash);
+    texture.needsUpdate = true;
+  }
+
+  const ad = {
+    object,
+    canvas: c,
+    side,
+    url: cfg.url || "",
+    label: cfg.label || "",
+    style,
+    term,
+    hitPoint(ay) {
+      object.updateMatrixWorld(true);
+      const ny = clamp(0.22 + (0.5 + ay * 0.5) * 0.56, 0.16, 0.86);
+      const local = new THREE.Vector3(0, ny * AD_H - AD_H / 2, AD_D / 2 + BALL_R * 0.7);
+      return local.applyMatrix4(object.matrixWorld);
+    },
+    flash() {
+      flashUntil = performance.now() + 220;
+      lastKey = "";
+    },
+    tick: draw,
+    redraw() {
+      lastKey = "";
+      draw(performance.now());
+    },
+  };
+  object.userData.ad = ad;
+  body.userData.ad = ad;
+  face.userData.ad = ad;
+  draw(0);
+  return ad;
+}
+
+function placeAds(ads) {
+  // same wall as the scoreboard, facing the hall — no yaw toward the camera
+  const x = (BOARD_W + 0.1) / 2 + AD_GAP + (AD_W + 0.08) / 2;
+  const y = AD_LIFT + AD_H / 2;
+  ads.left.object.position.set(-x, y, BOARD_Z);
+  ads.left.object.rotation.set(0, 0, 0);
+  ads.right.object.position.set(x, y, BOARD_Z);
+  ads.right.object.rotation.set(0, 0, 0);
+}
+
+function buildAds(cfg) {
+  const left = buildAdBoard(cfg.left, -1);
+  const right = buildAdBoard(cfg.right, 1);
+  ensureJetBrains().then(() => {
+    left.redraw();
+    right.redraw();
+  });
+  return {
+    left,
+    right,
+    tick(now) {
+      left.tick(now);
+      right.tick(now);
+    },
+    restart() {
+      left.redraw();
+      right.redraw();
     },
   };
 }
