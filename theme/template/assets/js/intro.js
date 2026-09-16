@@ -65,7 +65,7 @@ function boot(intro) {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const coarse = window.matchMedia("(pointer: coarse)").matches || (navigator.maxTouchPoints > 0 && window.innerWidth < 900);
   const hints = {
-    aim: intro.dataset.hintAim || (coarse ? "Wisch, zum de Ball wärfe" : "Klick, zum de Ball wärfe"),
+    aim: intro.dataset.hintAim || (coarse ? "Wüsch, zum de Ball wörfe" : "Klick, zum de Ball wörfe"),
     done: intro.dataset.hintDone || "Scrolle ↓",
     again: coarse ? "Tipp uf de Ball für nomol" : "Klick uf de Ball für nomol",
   };

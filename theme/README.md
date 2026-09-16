@@ -118,9 +118,9 @@ Optional front matter:
 intro:
   title: Forti-Legends                       # defaults to site_name
   kicker: Ziitkapsle vo de Forti-Legends     # small line top left
-  label: Mini-Game // Wirf de Ball is Goal   # small line top right (hidden on phones)
+  label: Mini-Game // Wörf de Ball is Goal   # small line top right (hidden on phones)
   since: 2024                                # used in the default kicker
-  hint: Klick, zum de Ball wärfe             # bottom hint before the throw
+  hint: Klick, zum de Ball wörfe             # bottom hint before the throw
   hint_done: Scrolle ↓                       # bottom hint afterwards
   ball_model: assets/models/handball/scene.gltf   # see below
   ball_front: 0,0,0                          # x,y,z degrees: turn the model so its logo faces front
