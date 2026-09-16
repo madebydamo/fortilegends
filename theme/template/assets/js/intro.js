@@ -1,9 +1,10 @@
 /* Forti-Legends theme: front-page mini game (ES module, homepage only).
  *
- * Throw the handball into the goal. Phone: swipe in any direction. Desktop:
- * point with the mouse (an arrow shows the direction) and click. The ball is
- * thrown from hand height, always curves into the goal, the net swings, the
- * ball drops and rolls back towards the visitor. The title slides in over the
+ * Throw the handball into the goal. Phone: swipe in any direction; tilting
+ * the phone moves the camera a little, the same way as the mouse on a
+ * computer. Desktop: point with the mouse (an arrow shows the direction) and
+ * click. The ball is thrown from hand height, always curves into the goal, the
+ * net swings, the ball drops and rolls back towards the visitor. The title slides in over the
  * scene at the hit. The ball rolls back and on down the page in one motion
  * while the page scrolls along and the title travels down and turns into the
  * hero title; it all ends with the hero at the top of the screen and the
@@ -70,6 +71,64 @@ function boot(intro) {
     again: coarse ? "Tipp uf de Ball für nomol" : "Klick uf de Ball für nomol",
   };
 
+  /* Phone tilt uses the same camera look as the desktop mouse: -1..1 in
+   * screen space (x right, y down). Origin is the hold when aiming starts.
+   * ~18° of tilt matches the mouse at the edge of the stage. */
+  const GYRO_RANGE = 18;
+  let gyroLook = null;
+  let gyroOrigin = null;
+  let gyroListening = false;
+
+  function screenAngle() {
+    const o = window.screen && window.screen.orientation;
+    if (o && typeof o.angle === "number") return ((o.angle % 360) + 360) % 360;
+    if (typeof window.orientation === "number") return ((window.orientation % 360) + 360) % 360;
+    return 0;
+  }
+
+  function tiltXY(beta, gamma) {
+    let x = gamma;
+    let y = beta;
+    const a = screenAngle();
+    if (a === 90) {
+      x = beta;
+      y = -gamma;
+    } else if (a === 180) {
+      x = -gamma;
+      y = -beta;
+    } else if (a === 270) {
+      x = -beta;
+      y = gamma;
+    }
+    return { x, y };
+  }
+
+  function onDeviceOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const t = tiltXY(e.beta, e.gamma);
+    if (!gyroOrigin) gyroOrigin = t;
+    gyroLook = {
+      x: clamp((t.x - gyroOrigin.x) / GYRO_RANGE, -1, 1),
+      y: clamp((t.y - gyroOrigin.y) / GYRO_RANGE, -1, 1),
+    };
+  }
+
+  function startGyro() {
+    if (gyroListening || reduce) return;
+    gyroListening = true;
+    window.addEventListener("deviceorientation", onDeviceOrient);
+  }
+
+  function requestGyroPermission() {
+    const DOE = window.DeviceOrientationEvent;
+    if (!DOE || typeof DOE.requestPermission !== "function") return;
+    DOE.requestPermission()
+      .then((state) => {
+        if (state === "granted") startGyro();
+      })
+      .catch(() => {});
+  }
+
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -82,6 +141,17 @@ function boot(intro) {
   renderer.shadowMap.type = THREE.PCFShadowMap;
   stage.insertBefore(renderer.domElement, stage.firstChild);
   intro.classList.add("is-ready");
+
+  if (coarse && !reduce && window.DeviceOrientationEvent) {
+    startGyro();
+    if (typeof window.DeviceOrientationEvent.requestPermission === "function") {
+      const once = () => {
+        window.removeEventListener("pointerdown", once, true);
+        requestGyroPermission();
+      };
+      window.addEventListener("pointerdown", once, true);
+    }
+  }
 
   /* ---------------------------------------------------------------- scene */
   const scene = new THREE.Scene();
@@ -210,6 +280,8 @@ function boot(intro) {
 
   function enterAim() {
     state = "aim";
+    gyroOrigin = null;
+    gyroLook = null;
     intro.classList.add("is-aiming");
     intro.classList.remove("is-done");
     setHint(hints.aim);
@@ -721,11 +793,22 @@ function boot(intro) {
 
   /* -------------------------------------------------------------- update */
   function update(dt) {
-    // camera: tiny parallax while aiming, back to rest afterwards
-    if (state === "aim" && pointer && !coarse) {
-      const nx = (pointer.x / stage.clientWidth) * 2 - 1;
-      const ny = (pointer.y / stage.clientHeight) * 2 - 1;
-      camTarget.set(camRest.pos.x + nx * 0.3, camRest.pos.y - ny * 0.1, camRest.pos.z);
+    // camera: tiny parallax while aiming (mouse on desktop, tilt on phone)
+    if (state === "aim") {
+      let nx = 0;
+      let ny = 0;
+      let looking = false;
+      if (pointer && !coarse) {
+        nx = (pointer.x / stage.clientWidth) * 2 - 1;
+        ny = (pointer.y / stage.clientHeight) * 2 - 1;
+        looking = true;
+      } else if (gyroLook) {
+        nx = gyroLook.x;
+        ny = gyroLook.y;
+        looking = true;
+      }
+      if (looking) camTarget.set(camRest.pos.x + nx * 0.3, camRest.pos.y - ny * 0.1, camRest.pos.z);
+      else camTarget.copy(camRest.pos);
     } else {
       camTarget.copy(camRest.pos);
     }
@@ -881,7 +964,10 @@ function boot(intro) {
 
   window.addEventListener("resize", () => resize(false));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncTitleLines);
-  window.addEventListener("orientationchange", () => setTimeout(() => resize(true), 250));
+  window.addEventListener("orientationchange", () => {
+    gyroOrigin = null;
+    setTimeout(() => resize(true), 250);
+  });
   resize(true);
   if (reduce) finish(true);
   else enterAim();

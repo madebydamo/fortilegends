@@ -79,7 +79,9 @@ handball with white speed lines and the site name as its wordmark, held at
 hand height. The visitor throws it into the goal:
 
 - **Phone**: swipe in any direction. The ball follows that direction and
-  curves into the goal; it can't miss. A tap throws straight.
+  curves into the goal; it can't miss. A tap throws straight. Tilt the
+  phone a little: the camera moves the same way as the mouse on a computer.
+  On iPhone the first tap asks for motion access.
 - **Desktop**: point the mouse (a dotted arrow shows the direction) and click.
 
 Then the movie: the net swings, the ball drops, the title slides in over the
@@ -212,6 +214,7 @@ npx --yes clean-css-cli@5 -O1 --inline none -o mkdocs_simple_blog/assets/css/roo
 npx --yes clean-css-cli@5 -O1 --inline none -o mkdocs_simple_blog/assets/css/main.min.css  template/assets/css/main.css
 npx --yes clean-css-cli@5 -O1 --inline none -o mkdocs_simple_blog/assets/css/media.min.css template/assets/css/media.css
 npx --yes terser@5 template/assets/js/main.js -c -m -o mkdocs_simple_blog/assets/js/main.min.js
+npx --yes terser@5 template/assets/js/intro.js -c -m --module -o mkdocs_simple_blog/assets/js/intro.min.js
 ```
 
 If clean-css rewrites the `@import url(root.min.css)` line at the top of
