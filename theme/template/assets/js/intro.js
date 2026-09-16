@@ -1497,7 +1497,7 @@ function boardConfig(ds) {
     guest: ds.guest || "Gast",
     score: sc ? [parseInt(sc[1], 10), parseInt(sc[2], 10)] : [64, 5],
     period: parseInt(ds.period, 10) || 2,
-    clock: mmss(ds.clock, 29 * 60 + 30),
+    clock: mmss(ds.clock, 29 * 60 + 24),
     penalty: mmss(ds.penalty, 69),
     penaltyNumber: parseInt(ds.penaltyNumber, 10) || 3,
   };
