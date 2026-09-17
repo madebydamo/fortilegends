@@ -1495,7 +1495,7 @@ function boardConfig(ds) {
   return {
     home: ds.home || "Forti",
     guest: ds.guest || "Gast",
-    score: sc ? [parseInt(sc[1], 10), parseInt(sc[2], 10)] : [64, 5],
+    score: sc ? [parseInt(sc[1], 10), parseInt(sc[2], 10)] : [65, 5],
     period: parseInt(ds.period, 10) || 2,
     clock: mmss(ds.clock, 29 * 60 + 24),
     penalty: mmss(ds.penalty, 69),
@@ -2010,9 +2010,11 @@ function drawTerminalAd(ctx, W, H, label, now, flash, term) {
   ctx.strokeStyle = "#222";
   ctx.lineWidth = 8;
   ctx.strokeRect(4, 4, W - 8, H - 8);
+  const frame = 18;
+  const frameW = 10;
   ctx.strokeStyle = "#e11c1e";
-  ctx.lineWidth = 10;
-  ctx.strokeRect(18, 18, W - 36, H - 36);
+  ctx.lineWidth = frameW;
+  ctx.strokeRect(frame, frame, W - frame * 2, H - frame * 2);
 
   const mono = jetBrainsReady ? "'JetBrains Mono', monospace" : "'Roboto Mono', ui-monospace, monospace";
   const pad = Math.round(W * 0.06);
@@ -2029,7 +2031,7 @@ function drawTerminalAd(ctx, W, H, label, now, flash, term) {
   for (let i = 0; i < head.length; i++) {
     if (i === 2) {
       ctx.fillStyle = "#e11c1e";
-      ctx.fillRect(pad + 8, y - lh * 0.42, maxW - 16, 5);
+      ctx.fillRect(frame, y - lh * 0.42, W - frame * 2, frameW);
       y += 8;
       ctx.fillStyle = "#fff";
     }
