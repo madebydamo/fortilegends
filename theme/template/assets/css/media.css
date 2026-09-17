@@ -22,6 +22,15 @@
 
 /* Tablets */
 @media (max-width: 900px) {
+  :root {
+    --heading-letter-spacing: -0.015em;
+    --heading-word-spacing: 0.1em;
+    --heading-line-height: 1.12;
+    --display-letter-spacing: -0.02em;
+    --display-word-spacing: 0.12em;
+    --display-line-height: 1.08;
+  }
+
   .nav__toggle {
     display: flex;
   }
@@ -208,6 +217,15 @@
 
 /* Phones */
 @media (max-width: 640px) {
+  :root {
+    --heading-letter-spacing: -0.01em;
+    --heading-word-spacing: 0.12em;
+    --heading-line-height: 1.16;
+    --display-letter-spacing: -0.012em;
+    --display-word-spacing: 0.16em;
+    --display-line-height: 1.12;
+  }
+
   body {
     font-size: 14px;
   }

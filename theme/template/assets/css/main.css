@@ -59,8 +59,9 @@ h6 {
   color: var(--title);
   font-family: var(--font-display);
   font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  letter-spacing: var(--heading-letter-spacing);
+  word-spacing: var(--heading-word-spacing);
+  line-height: var(--heading-line-height);
   text-transform: uppercase;
 }
 
@@ -421,8 +422,9 @@ h6 {
 .hero__title {
   font-size: clamp(52px, 10vw, 148px);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -660,8 +662,9 @@ h6 {
   margin: 0;
   font-size: clamp(56px, 9.6vw, 160px);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
   color: var(--title);
   white-space: nowrap; /* the lines are set by the <br>, like the hero title breaks */
   pointer-events: none;
@@ -682,9 +685,8 @@ h6 {
 }
 
 /* Travels down to the hero title (transform set by the JS), under the ball.
-   Line-height is 0.85, so the two lines overlap. Any fill on a line box
-   (paper colour, selection) paints over the line above — keep backgrounds
-   transparent so the letters stay clean. */
+   Keep backgrounds transparent so a selection highlight cannot paint a
+   paper rectangle over the letters. */
 .intro__title.is-moving {
   z-index: 4; /* under the page-ball (5), above in-flow page copy */
   transition: none;
@@ -771,8 +773,9 @@ h6 {
   margin: 0;
   font-size: clamp(48px, 8vw, 120px);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
 }
 
 .stats__grid {
@@ -838,8 +841,9 @@ h6 {
   margin: 0 0 40px;
   font-size: clamp(38px, 6vw, 88px);
   font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.9;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -1236,8 +1240,9 @@ h6 {
   padding: 88px 0 28px;
   font-size: clamp(48px, 9vw, 128px);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
 }
 
 /* Agenda list: `## Ausblick { .agenda }` followed by a list */
@@ -1265,8 +1270,9 @@ h6 {
   margin: 0;
   font-size: clamp(40px, 6vw, 80px);
   font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
 }
 
 .agenda__count {
@@ -1425,8 +1431,9 @@ h6 {
   margin: 0;
   font-size: clamp(48px, 5vw, 72px);
   font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
 }
 
 .card-column__count {
@@ -1628,8 +1635,9 @@ h6 {
   margin: 0 0 32px;
   font-size: clamp(40px, 7vw, 96px);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  letter-spacing: var(--display-letter-spacing);
+  word-spacing: var(--display-word-spacing);
+  line-height: var(--display-line-height);
 }
 
 .search__label {

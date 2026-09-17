@@ -15,8 +15,8 @@
   {%- if intro.hint_done %} data-hint-done="{{ intro.hint_done }}"{% endif %}
   {%- if board is sameas false %} data-board="off"{% else %}
   data-home="{{ board.home or 'Forti' }}" data-guest="{{ board.guest or 'Gast' }}"
-  data-score="{{ board.score or '64:5' }}" data-period="{{ board.period or 2 }}"
-  data-clock="{{ board.clock or '29:30' }}"
+  data-score="{{ board.score or '65:5' }}" data-period="{{ board.period or 2 }}"
+  data-clock="{{ board.clock or '29:24' }}"
   data-penalty="{{ board.penalty or '1:09' }}" data-penalty-number="{{ board.penalty_number or 3 }}"{% endif %}
   {%- set ads = intro.ads if intro.ads is defined else {} %}
   {%- if ads is sameas false %} data-ads="off"{% else %}
@@ -30,11 +30,11 @@
   data-ad-right-style="{{ right.style or 'sale' }}"{% endif %}>
   <div class="intro__stage">
     <p class="intro__kicker">{{ intro.kicker or ('Ziitkapsle vo de Forti-Legends // sit ' ~ since) }}</p>
-    <p class="intro__label" aria-hidden="true">{{ intro.label or 'Mini-Game // Wirf de Ball is Goal' }}</p>
+    <p class="intro__label" aria-hidden="true">{{ intro.label or 'Mini-Game // Wörf de Ball is Goal' }}</p>
     <svg class="intro__aim" aria-hidden="true"><line x1="0" y1="0" x2="0" y2="0"></line><polygon points="0,0 0,0 0,0"></polygon></svg>
     <p class="intro__hint" aria-hidden="true"></p>
     <dialog class="intro__adprompt" aria-labelledby="intro-adprompt-ask">
-      <p class="intro__adprompt-ask" id="intro-adprompt-ask" data-ad-ask>Wottsch die Siite ufmache?</p>
+      <p class="intro__adprompt-ask" id="intro-adprompt-ask" data-ad-ask>Wötsch die Siite ufmache?</p>
       <p class="intro__adprompt-blurb" data-ad-blurb></p>
       <div class="intro__adprompt-actions">
         <button type="button" class="button button--solid" data-ad-go>Ja, ufmache</button>

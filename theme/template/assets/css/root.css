@@ -16,6 +16,17 @@
     --font-display: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
+    /* Heading rhythm. Display titles used to sit at letter-spacing -0.06em /
+       line-height 0.85, so stacked lines painted into each other. These three
+       are the knobs for every viewport (media.css loosens them on tablets
+       and phones). */
+    --heading-letter-spacing: -0.02em;
+    --heading-word-spacing: 0.08em;
+    --heading-line-height: 1.08;
+    --display-letter-spacing: -0.025em;
+    --display-word-spacing: 0.1em;
+    --display-line-height: 1.02;
+
     /* Layout */
     --gutter: 12px;
     --max-width: 1440px;

@@ -12,9 +12,13 @@ The Docker image installs this directory instead of the PyPI package. Keep
 ## Design
 
 The look follows a brutalist, editorial style: off-white page, black 1px grid
-lines, huge tight `Inter` headings and `Roboto Mono` for everything else
-(both loaded from Google Fonts). Bootstrap and jQuery are no longer used; the
-theme ships one small `main.js`.
+lines, huge `Inter` headings and `Roboto Mono` for everything else
+(both loaded from Google Fonts). Heading rhythm is three CSS variables
+(`--heading-letter-spacing`, `--heading-word-spacing`, `--heading-line-height`,
+plus the `--display-*` twins for the fat titles). They stay slightly tight on
+desktop and open up on tablets and phones so stacked lines never paint into
+each other. Bootstrap and jQuery are no longer used; the theme ships one small
+`main.js`.
 
 Global pieces on every page:
 
@@ -91,9 +95,8 @@ Then the movie: the net swings, the ball drops, the title slides in over the
 scene, and the ball rolls back and on down the page in one continuous motion.
 The page scrolls along and the stage title travels down with it and turns
 into the hero title (same font and the same line breaks, so it is one shape
-the whole way; the letters stay on a transparent backing because the tight
-line-height would otherwise let a fill cover the line above; `.hero__title`
-stays hidden until it arrives). From the roll-back on the ball is drawn on its own
+the whole way; the letters stay on a transparent backing so a fill cannot
+cover them; `.hero__title` stays hidden until it arrives). From the roll-back on the ball is drawn on its own
 small canvas (`.intro__pageball`) above everything, so it always passes in
 front of the title; a hidden stand-in keeps its shadow on the stage floor. It all ends with the hero at the top of the screen (right under
 the header) and the ball resting next to the first line of the hero title,
@@ -146,7 +149,7 @@ intro:
   board:                                     # scoreboard above the goal (board: false hides it)
     home: Forti
     guest: Gast
-    score: 64:5                              # home:guest before the throw (+1 for home at the goal)
+    score: 65:5                              # home:guest before the throw (+1 for home at the goal)
     period: 2
     clock: 29:30                             # game clock, counts up to 30:00 (or 60:00)
     penalty: 1:09                            # penalty time, counts down
