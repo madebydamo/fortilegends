@@ -2020,26 +2020,36 @@ function drawTerminalAd(ctx, W, H, label, now, flash, term) {
   const pad = Math.round(W * 0.06);
   const maxW = W - pad * 2;
   const cx = W / 2;
-  const head = ["damianmoser", ".ch"].concat(headlineLines(label));
-  const size = fitHeadline(ctx, head, maxW, Math.round(W * 0.12), "800 $px " + mono);
+  const brand = ["damianmoser", ".ch"];
+  const tag = headlineLines(label);
+  const size = fitHeadline(ctx, brand.concat(tag), maxW, Math.round(W * 0.12), "800 $px " + mono);
   const lh = size * 1.05;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fff";
   let y = pad + size * 0.62;
-  for (let i = 0; i < head.length; i++) {
-    if (i === 2) {
-      ctx.fillStyle = "#e11c1e";
-      ctx.fillRect(frame, y - lh * 0.42, W - frame * 2, frameW);
-      y += 8;
-      ctx.fillStyle = "#fff";
-    }
-    ctx.fillText(head[i], cx, y);
+  for (const line of brand) {
+    ctx.fillText(line, cx, y);
     y += lh;
   }
 
-  const termTop = y + 10;
+  const barY = y - lh * 0.28;
+  ctx.fillStyle = "#e11c1e";
+  ctx.fillRect(frame, barY, W - frame * 2, frameW);
+  const barBottom = barY + frameW;
+
+  // Terminal stays put; IT / SPONSORING sit in the middle of the band
+  // between the red bar and the first terminal line.
+  const termTop = y + tag.length * lh + 18;
+  const tagBlockH = (tag.length - 1) * lh + size;
+  let tagY = barBottom + (termTop - barBottom - tagBlockH) / 2 + size / 2;
+  ctx.fillStyle = "#fff";
+  for (const line of tag) {
+    ctx.fillText(line, cx, tagY);
+    tagY += lh;
+  }
+
   drawTermPane(ctx, pad, termTop, W - pad * 2, Math.max(80, H - termTop - pad), term, mono);
 
   paintScanlines(ctx, W, H);
