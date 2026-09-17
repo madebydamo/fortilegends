@@ -97,14 +97,3 @@ compatibility.
 - Posts are photo-heavy and include `.mp4` videos, so media should look great.
 - Check a normal post page as well as the front page after changing shared CSS.
 
-## When you finish a task
-
-Every time you finish a task, end with a short explanation **as if talking to a
-five-year-old**, so we know exactly what changed and why:
-
-- Use simple words and short sentences. No jargon. If a technical term can't be
-  avoided, explain it in plain words.
-- Say what you changed, where (which files), and what we'll see or notice now.
-- Say if we have to do anything ourselves, like rebuilding with
-  `docker compose up --build` or copying `index.md` to production.
-- Keep it short. A few sentences or bullet points is enough.
