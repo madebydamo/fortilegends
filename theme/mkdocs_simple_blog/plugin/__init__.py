@@ -50,6 +50,9 @@ class BlogPlugin(BasePlugin[BlogPluginConfig]):
         bound_format_date = lambda value: format_date(value, locale=locale)  # noqa: E731
         env.filters["fmt_date"] = bound_format_date
         env.globals["fmt_date"] = bound_format_date
+        from .social import install_filters
+
+        install_filters(env)
         return env
 
     def on_files(self, files, config):

@@ -1,0 +1,46 @@
+{#- Open Graph / Twitter card tags. Values come from the social_card filter. -#}
+{%- if page %}
+{%- set card = page | social_card(config) %}
+{%- if card.description %}
+    <meta name="description" content="{{ card.description }}">
+{%- endif %}
+    <meta property="og:type" content="{{ card.type }}">
+    <meta property="og:title" content="{{ card.title }}">
+{%- if card.description %}
+    <meta property="og:description" content="{{ card.description }}">
+{%- endif %}
+{%- if card.url %}
+    <meta property="og:url" content="{{ card.url }}">
+{%- endif %}
+{%- if card.site_name %}
+    <meta property="og:site_name" content="{{ card.site_name }}">
+{%- endif %}
+    <meta property="og:locale" content="{{ card.locale }}">
+{%- if card.image %}
+    <meta property="og:image" content="{{ card.image }}">
+{%- if card.image.startswith('https://') %}
+    <meta property="og:image:secure_url" content="{{ card.image }}">
+{%- endif %}
+    <meta property="og:image:alt" content="{{ card.image_alt }}">
+{%- if card.image_type %}
+    <meta property="og:image:type" content="{{ card.image_type }}">
+{%- endif %}
+{%- endif %}
+    <meta name="twitter:card" content="{{ card.card }}">
+    <meta name="twitter:title" content="{{ card.title }}">
+{%- if card.description %}
+    <meta name="twitter:description" content="{{ card.description }}">
+{%- endif %}
+{%- if card.image %}
+    <meta name="twitter:image" content="{{ card.image }}">
+    <meta name="twitter:image:alt" content="{{ card.image_alt }}">
+{%- endif %}
+{%- if card.author %}
+    <meta name="author" content="{{ card.author }}">
+    <meta property="article:author" content="{{ card.author }}">
+{%- endif %}
+{%- if card.date %}
+    <meta name="date" content="{{ card.date }}">
+    <meta property="article:published_time" content="{{ card.date }}">
+{%- endif %}
+{%- endif %}

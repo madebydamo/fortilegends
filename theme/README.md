@@ -38,6 +38,30 @@ when two images follow each other, a click-to-zoom lightbox, and a
 box in the running text instead of a black block; the frame repeats on every
 line when it wraps. Fenced code blocks stay black.
 
+### Link previews (WhatsApp, iMessage, Discord, X, …)
+
+Pasting a post URL into a chat builds the preview from the post itself. No
+extra front matter is required:
+
+- **Image**: first photo in the post (`![…](…)` or `<img>`). The homepage
+  uses `hero.image`.
+- **Text**: author(s) from `authors:` plus the opening paragraph, shortened
+  to a hook. The short `summary` line (`Kurz gseit`, e.g. `4. Event usem 2026`)
+  is **not** used for the share text unless the body has nothing else.
+- **Title**: the post title.
+
+Optional overrides:
+
+```yaml
+image: assets/my-share-photo.jpeg
+image_alt: Die Truppe vor em Goal
+description: Custom share text that replaces the opening paragraph
+```
+
+`site_url` in `mkdocs.yml` is what makes `og:image` an absolute `https://`
+URL. Crawlers ignore relative image paths. After a deploy, chat apps cache
+previews; WhatsApp may keep the old card until the link is shared again later.
+
 ## Front page (`index.md`)
 
 The front page is built from ordinary Markdown plus a bit of front matter. The

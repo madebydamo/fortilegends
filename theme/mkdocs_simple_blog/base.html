@@ -12,12 +12,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f4ef">
 
-    {% if page and page.is_homepage %}
-    <meta name="description" content="{{ config['site_description'] }}">{% endif %}
     {% if page and page.canonical_url %}
     <link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
-    {% if config.site_author %}
-    <meta name="author" content="{{ config.site_author }}">{% endif %}
 
     {% if config.theme.favicon %}
     <link rel="icon" type="image/x-icon" href="{{ config.theme.favicon|url }}">
@@ -36,40 +32,7 @@
     {%- endblock %}
 
     {%- block extrahead %}
-    {% if page and page.meta %}
-    {% if page.meta.title %}
-    <meta name="title" content="{{ page.meta.title }}">
-    <meta property="og:title" content="{{ page.meta.title }}">
-    <meta name="twitter:title" content="{{ page.meta.title }}">
-    {% endif %}
-    {% if page.meta.description or page.meta.summary %}
-    <meta name="description" content="{{ page.meta.description or page.meta.summary }}">
-    <meta property="og:description" content="{{ page.meta.description or page.meta.summary }}">
-    <meta name="twitter:description" content="{{ page.meta.description or page.meta.summary }}">
-    {% endif %}
-    {% if page.meta.author %}
-    <meta name="author" content="{{ page.meta.author }}">
-    {% endif %}
-    {% if page.meta.date %}
-    <meta name="date" content="{{ page.meta.date }}">
-    <meta property="article:published_time" content="{{ page.meta.date }}">
-    {% endif %}
-    {% if page.meta.image %}
-    <meta property="og:image" content="{{ page.meta.image|url }}">
-    <meta name="twitter:image" content="{{ page.meta.image|url }}">
-    {% elif page.meta.hero and page.meta.hero.image %}
-    <meta property="og:image" content="{{ page.meta.hero.image|url }}">
-    <meta name="twitter:image" content="{{ page.meta.hero.image|url }}">
-    {% endif %}
-    {% if page.canonical_url %}
-    <meta property="og:url" content="{{ page.canonical_url }}">
-    {% endif %}
-    {% if config.site_name %}
-    <meta property="og:site_name" content="{{ config.site_name }}">
-    {% endif %}
-    <meta property="og:type" content="article">
-    <meta name="twitter:card" content="summary_large_image">
-    {% endif %}
+    {% include "modules/social.html" %}
     {%- endblock %}
 
     <script>var base_url = '{{ base_url }}';</script>
