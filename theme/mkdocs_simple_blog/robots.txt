@@ -1,0 +1,18 @@
+{%- set seo = config | seo -%}
+# {{ seo.name }} – {{ seo.origin }}
+# Suchmaschinen und KI-Assistenten sind willkommen.
+
+User-agent: *
+Allow: /
+Disallow: /search.html
+Disallow: /search/
+
+{% for bot in seo_ai_crawlers -%}
+User-agent: {{ bot }}
+{% endfor -%}
+Allow: /
+Disallow: /search.html
+Disallow: /search/
+
+Sitemap: {{ seo.origin }}sitemap.xml
+

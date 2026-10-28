@@ -1,6 +1,12 @@
 language: de
 
 include_search_page: true
+# sitemap.xml with public URLs, robots.txt, llms.txt and llms-full.txt (plugin/seo.py)
+static_templates:
+  - sitemap.xml
+  - robots.txt
+  - llms.txt
+  - llms-full.txt
 search_index_only: false
 
 sidebar: false
@@ -12,6 +18,10 @@ hljs_languages: []
 marquee: true
 # Second line in the footer's first column.
 footer_tagline: ""
+
+# Search engines and LLMs. Keys set in mkdocs.yml (theme.seo.*) replace the
+# Forti-Legends defaults in plugin/seo.py one by one; see README.
+seo: {}
 
 components:
   site_name: true

@@ -1,0 +1,36 @@
+{%- set seo = config | seo -%}
+{%- set home = (pages | seo_pages | selectattr('is_homepage') | list | first) -%}
+# {{ seo.name }}
+
+> {{ seo.description }}
+
+{% for fact in seo.facts -%}
+- {{ fact }}
+{% endfor %}
+Die Beiträge erzählen von den Events des Vereins in und um {{ seo.locality }} ({{ seo.region_name or seo.region }}): Fotos, Videos und Geschichten. Alle Texte im Volltext: {{ seo.origin }}llms-full.txt
+{%- if home %}
+{%- set events = home | seo_events | selectattr('upcoming') | list %}
+{%- if events %}
+
+## Ausblick (nächste Termine)
+
+{% for e in events -%}
+- {{ e.date.strftime('%d.%m.%Y') }}: {{ e.title }}{% if e.place %} ({{ e.place }}){% endif %}{% if e.info %} – {{ e.info }}{% endif %}
+{% endfor -%}
+{%- endif %}
+{%- endif %}
+{%- set posts = pages | seo_posts %}
+{%- for year, group in posts | groupby('parent.title') | reverse %}
+
+## Beiträge {{ year }}
+
+{% for p in group | sort(attribute='meta.date', reverse=true) -%}
+- [{{ p.meta.title or p.title }}]({{ p | seo_url(config) }}): {{ p.meta.date.strftime('%d.%m.%Y') if p.meta.date.strftime is defined else p.meta.date }}{% if p.meta.summary %}, {{ p.meta.summary | trim }}{% endif %}{% if p.meta.authors %} (von {{ p.meta.authors | join(' & ') }}){% endif %}
+{% endfor -%}
+{%- endfor %}
+
+## Optional
+
+- [Alle Beiträge im Volltext]({{ seo.origin }}llms-full.txt)
+- [Sitemap]({{ seo.origin }}sitemap.xml)
+- [Startseite]({{ seo.origin }})

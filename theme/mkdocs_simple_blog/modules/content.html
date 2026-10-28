@@ -30,7 +30,7 @@
     </aside>
     {%- endif %}
     <article class="post__body">
-      {{ page.content }}
+      {{ page.content | seo_content(page) }}
     </article>
   </div>
 

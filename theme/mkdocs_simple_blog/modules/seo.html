@@ -1,0 +1,24 @@
+{#- Search engines and LLMs: robots, place, structured data, llms.txt. Values come from the seo filters (plugin/seo.py). -#}
+{%- set seo = config | seo %}
+{%- set indexable = page and page.file and (page.file.inclusion is not defined or page.file.inclusion.value >= 0) and not page.meta.noindex %}
+{%- if indexable %}
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+{%- else %}
+    <meta name="robots" content="noindex, follow">
+{%- endif %}
+{%- if seo.keywords %}
+    <meta name="keywords" content="{{ seo.keywords | join(', ') }}">
+{%- endif %}
+{%- if seo.country and seo.region %}
+    <meta name="geo.region" content="{{ seo.country }}-{{ seo.region }}">
+{%- endif %}
+{%- if seo.locality %}
+    <meta name="geo.placename" content="{{ seo.locality }}{% if seo.region %} {{ seo.region }}{% endif %}">
+{%- endif %}
+{%- if seo.latitude and seo.longitude %}
+    <meta name="geo.position" content="{{ seo.latitude }};{{ seo.longitude }}">
+    <meta name="ICBM" content="{{ seo.latitude }}, {{ seo.longitude }}">
+{%- endif %}
+    <link rel="alternate" type="text/plain" title="llms.txt" href="{{ seo.origin }}llms.txt">
+    <link rel="sitemap" type="application/xml" href="{{ seo.origin }}sitemap.xml">
+    <script type="application/ld+json">{{ page | seo_jsonld(config, nav) }}</script>

@@ -45,7 +45,8 @@
   {#- the title sits outside the stage so it can travel down to the hero title;
       the <br> after the first hyphen is only used when the hero title breaks too -#}
   {%- set t = intro.title or config.site_name %}
-  <h1 class="intro__title"><span>{% if '-' in t %}{{ t.split('-', 1)[0] }}-<br>{{ t.split('-', 1)[1] }}{% else %}{{ t }}{% endif %}</span></h1>
+  {#- not an <h1>: the hero below holds the page's only <h1> -#}
+  <p class="intro__title" aria-hidden="true"><span>{% if '-' in t %}{{ t.split('-', 1)[0] }}-<br>{{ t.split('-', 1)[1] }}{% else %}{{ t }}{% endif %}</span></p>
 </section>
 {%- endif %}
 <!-- endblock -->

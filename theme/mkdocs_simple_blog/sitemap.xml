@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{#- Public URLs only (mkdocs serve would write its bind address), no not_in_nav pages, photos as image entries. -#}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+{%- for p in pages | seo_pages %}
+  <url>
+    <loc>{{ p | seo_url(config) | e }}</loc>
+    {%- set lastmod = p | seo_lastmod %}
+    {%- if lastmod %}
+    <lastmod>{{ lastmod }}</lastmod>
+    {%- endif %}
+    {%- for img in (p | seo_images(config))[:100] %}
+    <image:image><image:loc>{{ img | e }}</image:loc></image:image>
+    {%- endfor %}
+  </url>
+{%- endfor %}
+</urlset>

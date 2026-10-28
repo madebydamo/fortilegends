@@ -1,0 +1,27 @@
+{%- set seo = config | seo -%}
+# {{ seo.name }} – alle Beiträge im Volltext
+
+> {{ seo.description }}
+
+{% for fact in seo.facts -%}
+- {{ fact }}
+{% endfor %}
+Quelle: {{ seo.origin }} · Übersicht: {{ seo.origin }}llms.txt
+{% for p in pages | seo_posts %}
+
+---
+
+# {{ p.meta.title or p.title }}
+
+- URL: {{ p | seo_url(config) }}
+- Datum: {{ p.meta.date.strftime('%d.%m.%Y') if p.meta.date.strftime is defined else p.meta.date }}
+{%- if p.meta.authors %}
+- Autor: {{ p.meta.authors | join(' & ') }}
+{%- endif %}
+{%- if p.meta.summary %}
+- Kurz gseit: {{ p.meta.summary | trim }}
+{%- endif %}
+- Verein: {{ seo.name }}, {{ seo.locality }} {{ seo.region }}
+
+{{ p | llms_markdown(config) }}
+{%- endfor %}

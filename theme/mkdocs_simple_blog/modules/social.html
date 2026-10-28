@@ -1,6 +1,9 @@
 {#- Open Graph / Twitter card tags. Values come from the social_card filter. -#}
 {%- if page %}
 {%- set card = page | social_card(config) %}
+{%- if card.url %}
+    <link rel="canonical" href="{{ card.url }}">
+{%- endif %}
 {%- if card.description %}
     <meta name="description" content="{{ card.description }}">
 {%- endif %}

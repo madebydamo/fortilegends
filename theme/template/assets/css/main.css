@@ -654,6 +654,9 @@ h6 {
 }
 
 .intro__title {
+  /* a <p>, not an <h1>, so it needs the heading face itself */
+  font-family: var(--font-display);
+  text-transform: uppercase;
   position: absolute;
   z-index: 2; /* above the canvas (the ball is on its own canvas, above the title) */
   left: 20px;

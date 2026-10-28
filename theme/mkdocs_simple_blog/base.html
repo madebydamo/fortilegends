@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="{{ config.theme.locale or config.theme.language or 'de' }}" data-theme="{{ config.theme.theme_style or 'light' }}">
+{%- set seo = config | seo %}
+<html lang="{{ seo.lang or 'de-CH' }}" data-theme="{{ config.theme.theme_style or 'light' }}">
 
 <head>
     {%- block site_meta %}
     {%- block htmltitle %}
-    <title>{% if page and page.title and not page.is_homepage %}{{ page.title }} - {% endif %}{{ config.site_name }}</title>
+    <title>{{ page | seo_title(config) }}</title>
     {%- endblock %}
 
     <meta charset="utf-8">
@@ -12,8 +13,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f4ef">
 
-    {% if page and page.canonical_url %}
-    <link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
 
     {% if config.theme.favicon %}
     <link rel="icon" type="image/x-icon" href="{{ config.theme.favicon|url }}">
@@ -33,6 +32,7 @@
 
     {%- block extrahead %}
     {% include "modules/social.html" %}
+    {% include "modules/seo.html" %}
     {%- endblock %}
 
     <script>var base_url = '{{ base_url }}';</script>

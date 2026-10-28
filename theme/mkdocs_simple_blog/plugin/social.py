@@ -60,8 +60,11 @@ MIN_OPENING = 80
 
 
 def install_filters(env: Any) -> None:
-    """Register the `social_card` Jinja filter (idempotent)."""
+    """Register the `social_card` and SEO Jinja filters (idempotent)."""
     env.filters["social_card"] = social_card
+    from .seo import install
+
+    install(env)
 
 
 def social_card(page: Any, config: Any) -> dict[str, str]:
@@ -103,6 +106,18 @@ def social_card(page: Any, config: Any) -> dict[str, str]:
         html,
         site_description=site_description,
     )
+    if is_home:
+        # the front page describes the club, not its opening paragraph
+        from .seo import seo_options
+
+        opts = seo_options(config)
+        description = str(
+            (meta.get("description") if isinstance(meta, dict) else None)
+            or opts.get("description")
+            or description
+        ).strip()
+        title = opts.get("home_title") or title
+        author = opts.get("name") or author
     date = _iso_date(meta.get("date") if isinstance(meta, dict) else None)
 
     return {

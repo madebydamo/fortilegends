@@ -62,6 +62,49 @@ description: Custom share text that replaces the opening paragraph
 URL. Crawlers ignore relative image paths. After a deploy, chat apps cache
 previews; WhatsApp may keep the old card until the link is shared again later.
 
+### Search engines and AI assistants (SEO)
+
+The theme does this on its own (`plugin/seo.py`, `modules/seo.html`); no plugin
+in `mkdocs.yml` is needed. The goal: show up for "Forti-Legends", "Fortilegends"
+and "Forti Gossau".
+
+- **Public URLs everywhere.** Production runs `mkdocs serve`, which rewrites
+  `site_url` to `0.0.0.0:8000`. `rel=canonical`, `og:url`, `sitemap.xml` and the
+  structured data always use `site_url` from `mkdocs.yml` instead.
+- **Titles**: front page `Forti-Legends Gossau – Verein, Events & Blog`, posts
+  `<Titel> – Forti-Legends Gossau`. A post can set its own with `seo_title:`.
+- **Description**: the front page uses `description:` from its front matter
+  (fallback: `seo.description`). Posts keep the link-preview text.
+- **Structured data** (JSON-LD): Organization with place Gossau SG, WebSite,
+  Blog with all posts, one `Event` per upcoming Ausblick date (add `Ort:` so
+  Google can show it), `BlogPosting` + breadcrumb on every post.
+- **Photos** get an `alt` text from their caption (Markdown captions drop it).
+  Without a caption: `Foto: <Titel>`.
+- **Files** at the site root: `sitemap.xml` (with photos), `robots.txt` (all
+  crawlers and AI bots allowed), `llms.txt` (club facts, dates, post list) and
+  `llms-full.txt` (every post as Markdown).
+- `lang="de-CH"`, geo meta tags, one `<h1>` per page, and a footer line
+  `Forti-Legends // Verein us Gossau SG // sit 2024` on every page.
+- Pages hidden with `not_in_nav` (like `example.md`), the search page, and
+  pages with `noindex: true` in the front matter get `noindex`.
+
+To change the club facts, set single keys in `mkdocs.yml`. Each one replaces
+the default from `plugin/seo.py`:
+
+```yaml
+theme:
+  seo:
+    home_title: Forti-Legends Gossau – Verein, Events & Blog
+    same_as:            # official profiles, e.g. Instagram
+      - https://www.instagram.com/…
+    facts:              # lines in llms.txt
+      - "Ort: Gossau, Kanton St. Gallen, Schweiz"
+```
+
+Other keys: `name`, `alternate_names`, `title_suffix`, `description`, `lang`,
+`locality`, `region`, `region_name`, `postal_code`, `country`, `latitude`,
+`longitude`, `founding_date`, `keywords`, `logo`.
+
 ## Front page (`index.md`)
 
 The front page is built from ordinary Markdown plus a bit of front matter. The

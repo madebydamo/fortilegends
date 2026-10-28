@@ -5,6 +5,10 @@
     <div class="footer__col footer__col--brand">
       <p>{{ config.site_description or config.site_name }}.</p>
       <p>{{ config.theme.footer_tagline or 'Fründschaft. Erinnerige. Gueti Ziite.' }}</p>
+      {%- set seo = config | seo %}
+      {%- if seo.locality %}
+      <p class="footer__place">{{ seo.name }} // Verein us {{ seo.locality }}{% if seo.region %} {{ seo.region }}{% endif %}{% if seo.founding_date %} // sit {{ seo.founding_date[:4] }}{% endif %}</p>
+      {%- endif %}
     </div>
     <div class="footer__col">
       <div class="footer__label">Index</div>
