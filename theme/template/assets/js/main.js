@@ -178,6 +178,285 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Agenda calendar file (.ics)                                         */
+  /* A row tap hands the phone or computer a VEVENT. Defaults:           */
+  /* 12:00–23:00 Europe/Zurich, summary "Fortilegends - <title>",        */
+  /* COLOR:red (CSS color name, RFC 7986).                               */
+  /* ------------------------------------------------------------------ */
+
+  var CAL_COLOR = "red";
+  var CAL_START = { h: 12, min: 0 };
+  var CAL_END = { h: 23, min: 0 };
+  var CAL_URL = "https://fortilegends.ch/";
+  var EXTRA_KEYS = {
+    ort: "location", location: "location", wo: "location",
+    info: "info", text: "info", beschrib: "info", beschreibung: "info",
+    notiz: "info", details: "info",
+    zit: "time", ziit: "time", zeit: "time", time: "time",
+    farb: "color", farbe: "color", color: "color",
+    link: "link", url: "link"
+  };
+
+  var ZURICH_ZONE = [
+    "BEGIN:VTIMEZONE",
+    "TZID:Europe/Zurich",
+    "X-LIC-LOCATION:Europe/Zurich",
+    "BEGIN:DAYLIGHT",
+    "TZOFFSETFROM:+0100",
+    "TZOFFSETTO:+0200",
+    "TZNAME:CEST",
+    "DTSTART:19700329T020000",
+    "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+    "END:DAYLIGHT",
+    "BEGIN:STANDARD",
+    "TZOFFSETFROM:+0200",
+    "TZOFFSETTO:+0100",
+    "TZNAME:CET",
+    "DTSTART:19701025T030000",
+    "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+    "END:STANDARD",
+    "END:VTIMEZONE"
+  ];
+
+  function plainText(html) {
+    var node = doc.createElement("div");
+    node.innerHTML = html;
+    return (node.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function ownCode(li) {
+    var codes = $$("code", li);
+    for (var i = 0; i < codes.length; i++) {
+      var parent = codes[i].parentNode;
+      var nested = false;
+      while (parent && parent !== li) {
+        if (parent.tagName === "UL" || parent.tagName === "OL") nested = true;
+        parent = parent.parentNode;
+      }
+      if (!nested) return codes[i];
+    }
+    return null;
+  }
+
+  function agendaTitle(li) {
+    var strong = li.querySelector("strong");
+    if (strong) {
+      var parent = strong.parentNode;
+      var nested = false;
+      while (parent && parent !== li) {
+        if (parent.tagName === "UL" || parent.tagName === "OL") nested = true;
+        parent = parent.parentNode;
+      }
+      if (!nested) return strong.innerHTML;
+    }
+    var clone = li.cloneNode(true);
+    $$("ul, ol, code", clone).forEach(function (n) {
+      n.parentNode.removeChild(n);
+    });
+    return clone.innerHTML.replace(/^[\s–—-]+/, "").trim();
+  }
+
+  function lineToExtra(text, out) {
+    text = String(text).replace(/\s+/g, " ").trim();
+    if (!text) return;
+    var match = text.match(/^([A-Za-zäöüÄÖÜ]+)\s*:\s*(.*)$/);
+    var key = match ? EXTRA_KEYS[match[1].toLowerCase()] : "";
+    if (!key) {
+      out.notes.push(text);
+      return;
+    }
+    var value = match[2].trim();
+    if (!value) return;
+    if (key === "info") out.notes.push(value);
+    else if (key === "time") out.timeText = value;
+    else out[key] = value;
+  }
+
+  /* Nested bullets (4 spaces in this Markdown) and a following bullet with
+     no date both count as extra lines for the event above them. */
+  function agendaExtras(li, siblingLines) {
+    var out = { location: "", notes: [], timeText: "", color: "", link: "" };
+    var lines = siblingLines ? siblingLines.slice() : [];
+    Array.prototype.forEach.call(li.children, function (child) {
+      if (child.tagName !== "UL" && child.tagName !== "OL") return;
+      Array.prototype.forEach.call(child.children, function (item) {
+        if (item.tagName === "LI") lines.push(item.textContent || "");
+      });
+    });
+    lines.forEach(function (line) {
+      lineToExtra(line, out);
+    });
+    return out;
+  }
+
+  function stripClocks(text) {
+    return text
+      .replace(/\s+\d{1,2}:\d{2}\s*(?:[-–—]|bis)\s*\d{1,2}:\d{2}/gi, "")
+      .replace(/\s+\d{1,2}:\d{2}/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseClock(token) {
+    var match = String(token).match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+    var h = +match[1];
+    var min = +match[2];
+    if (h > 23 || min > 59) return null;
+    return { h: h, min: min };
+  }
+
+  function parseTimeRange(text) {
+    var tokens = String(text).match(/\d{1,2}:\d{2}/g) || [];
+    return {
+      start: tokens[0] ? parseClock(tokens[0]) : null,
+      end: tokens[1] ? parseClock(tokens[1]) : null
+    };
+  }
+
+  function resolveTimes(range) {
+    var start = range.start || CAL_START;
+    var end = range.end || CAL_END;
+    var nextDay = end.h * 60 + end.min <= start.h * 60 + start.min;
+    return { start: start, end: end, nextDay: nextDay };
+  }
+
+  function calendarColor(value) {
+    var v = (value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(v)) return v.toUpperCase();
+    if (/^[a-z]{3,20}$/i.test(v)) return v.toLowerCase();
+    return CAL_COLOR;
+  }
+
+  function httpUrl(value) {
+    var v = (value || "").trim();
+    return /^https?:\/\/\S+$/i.test(v) ? v : "";
+  }
+
+  function clockLabel(hm) {
+    return pad(hm.h) + ":" + pad(hm.min);
+  }
+
+  function icsText(value) {
+    return String(value)
+      .replace(/\\/g, "\\\\")
+      .replace(/\r\n|\n|\r/g, "\\n")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,");
+  }
+
+  function foldLine(line) {
+    var encoder = new TextEncoder();
+    if (encoder.encode(line).length <= 75) return line;
+    var out = "";
+    var size = 0;
+    var chars = Array.from(line);
+    for (var i = 0; i < chars.length; i++) {
+      var n = encoder.encode(chars[i]).length;
+      if (size + n > 75) {
+        out += "\r\n ";
+        size = 1;
+      }
+      out += chars[i];
+      size += n;
+    }
+    return out;
+  }
+
+  function icsStamp(date) {
+    return date.getUTCFullYear()
+      + pad(date.getUTCMonth() + 1)
+      + pad(date.getUTCDate())
+      + "T"
+      + pad(date.getUTCHours())
+      + pad(date.getUTCMinutes())
+      + pad(date.getUTCSeconds())
+      + "Z";
+  }
+
+  function icsLocal(date, hm) {
+    return date.getFullYear()
+      + pad(date.getMonth() + 1)
+      + pad(date.getDate())
+      + "T"
+      + pad(hm.h)
+      + pad(hm.min)
+      + "00";
+  }
+
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function slug(text) {
+    return text.toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48);
+  }
+
+  function buildIcs(entry) {
+    var endDate = entry.times.nextDay ? addDays(entry.date, 1) : entry.date;
+    var summary = "Fortilegends - " + entry.title;
+    var whenLine = entry.shownDate + ", " + clockLabel(entry.times.start) + "–" + clockLabel(entry.times.end);
+    var desc = [whenLine];
+    if (entry.notes.length) desc.push(entry.notes.join("\n"));
+    desc.push(entry.link || CAL_URL);
+    var lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Forti-Legends//fortilegends.ch//DE",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "COLOR:" + entry.color
+    ].concat(ZURICH_ZONE, [
+      "BEGIN:VEVENT",
+      "UID:" + entry.uid,
+      "DTSTAMP:" + icsStamp(new Date()),
+      "DTSTART;TZID=Europe/Zurich:" + icsLocal(entry.date, entry.times.start),
+      "DTEND;TZID=Europe/Zurich:" + icsLocal(endDate, entry.times.end),
+      "SUMMARY:" + icsText(summary),
+      "DESCRIPTION:" + icsText(desc.join("\n\n")),
+      "URL:" + (entry.link || CAL_URL),
+      entry.location ? "LOCATION:" + icsText(entry.location) : "",
+      "COLOR:" + entry.color,
+      "STATUS:CONFIRMED",
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ]).filter(Boolean);
+    return lines.map(foldLine).join("\r\n") + "\r\n";
+  }
+
+  function isIos() {
+    var ua = navigator.userAgent || "";
+    if (/iPad|iPhone|iPod/.test(ua)) return true;
+    return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  }
+
+  /* iPhone Safari hands a text/calendar data URL to Calendar. Elsewhere the
+     browser downloads the .ics and the default calendar app opens it. */
+  function openCalendar(ics, filename) {
+    if (isIos()) {
+      var href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+      var opened = window.open(href, "_blank");
+      if (!opened) window.location.assign(href);
+      return;
+    }
+    var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var link = doc.createElement("a");
+    link.href = url;
+    link.download = filename;
+    doc.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 4000);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Agenda: `## Ausblick { .agenda }` + list                              */
   /* ------------------------------------------------------------------ */
 
@@ -202,30 +481,74 @@
     headText.appendChild(h2);
     section.appendChild(head);
 
-    var items = $$("li", list);
+    var items = [];
+    Array.prototype.forEach.call(list.children, function (node) {
+      if (node.tagName !== "LI") return;
+      if (ownCode(node) || !items.length) {
+        items.push({ li: node, lines: [] });
+      } else {
+        items[items.length - 1].lines.push(node.textContent || "");
+      }
+    });
     var count = el("p", "agenda__count", items.length + " Termin" + (items.length === 1 ? "" : "e") + " //");
     head.appendChild(count);
+    var status = el("p", "sr-only");
+    status.setAttribute("aria-live", "polite");
+    head.appendChild(status);
 
     var ol = el("ol", "agenda__list");
-    items.forEach(function (li, index) {
+    items.forEach(function (item, index) {
+      var li = item.li;
       var row = el("li", "agenda__row");
-      var code = li.querySelector("code");
-      var strong = li.querySelector("strong");
-      var dateText = code ? code.textContent : "";
-      var titleHtml;
-      if (strong) {
-        titleHtml = strong.innerHTML;
-      } else {
-        var clone = li.cloneNode(true);
-        var c = clone.querySelector("code");
-        if (c) c.parentNode.removeChild(c);
-        titleHtml = clone.innerHTML.replace(/^[\s–—-]+/, "");
+      var code = ownCode(li);
+      var dateText = code ? code.textContent.trim() : "";
+      var titleHtml = agendaTitle(li);
+      var title = plainText(titleHtml);
+      var extras = agendaExtras(li, item.lines);
+      var shownDate = stripClocks(dateText) || dateText;
+      var date = parseDate(shownDate);
+      var range = parseTimeRange(extras.timeText || dateText);
+      var times = resolveTimes(range);
+      var when = relativeLabel(date);
+      var face = date && title ? el("button", "agenda__add") : el("div", "agenda__add");
+      if (face.tagName === "BUTTON") face.type = "button";
+
+      var idx = el("span", "agenda__idx");
+      idx.textContent = pad(index + 1);
+      var dateEl = el("span", "agenda__date");
+      dateEl.textContent = shownDate;
+      var titleEl = el("span", "agenda__title", titleHtml);
+      var whenEl = el("span", "agenda__when");
+      whenEl.textContent = when || "//";
+      face.appendChild(idx);
+      face.appendChild(dateEl);
+      face.appendChild(titleEl);
+      face.appendChild(whenEl);
+      row.appendChild(face);
+
+      if (face.tagName === "BUTTON") {
+        var color = calendarColor(extras.color);
+        var link = httpUrl(extras.link);
+        var day = date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate());
+        var entry = {
+          title: title,
+          shownDate: shownDate,
+          date: date,
+          times: times,
+          notes: extras.notes,
+          location: extras.location,
+          link: link,
+          color: color,
+          uid: "fortilegends-" + day + "-" + (slug(title) || "termin") + "@fortilegends.ch"
+        };
+        var filename = "fortilegends-" + (slug(title) || "termin") + ".ics";
+        face.setAttribute("aria-label", title + ", " + shownDate + ", in Kalender iträge");
+        face.addEventListener("click", function () {
+          openCalendar(buildIcs(entry), filename);
+          status.textContent = title + " isch als Kalenderdatei parat.";
+        });
       }
-      var when = relativeLabel(parseDate(dateText));
-      row.appendChild(el("span", "agenda__idx", pad(index + 1)));
-      row.appendChild(el("span", "agenda__date", dateText));
-      row.appendChild(el("span", "agenda__title", titleHtml));
-      row.appendChild(el("span", "agenda__when", when || "//"));
+
       ol.appendChild(row);
     });
 

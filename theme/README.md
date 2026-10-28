@@ -210,13 +210,47 @@ smaller so the page stays quick. Mind the model licenses.
 ```markdown
 ## Ausblick { .agenda }
 
-- `27. Februar 2027` **2. Generalversammlung**
 - `12. Dezember 2026` **Winter Wonderland**
+    - Ort: Gossau
+    - Info: Apéro ab 18 Uhr
+    - Zit: 18:00–23:00
+- `27. Februar 2027` **2. Generalversammlung**
 ```
 
 Each list item becomes a numbered row: date in backticks, title in bold. The
 theme adds a "In 3 Mönet / Verbi" cell by reading the date (formats
-`27. Februar 2027`, `27.02.2027`, `2027-02-27`).
+`27. Februar 2027`, `27.02.2027`, `2027-02-27`). The date is underlined. A tap
+or click on the row downloads a calendar file (`.ics`). On an iPhone, Safari
+hands that file to Calendar so the Termin can be saved. The clock is
+`Europe/Zurich`.
+
+Indent the extra lines by **4 spaces**. This Markdown engine only nests a list
+at that indent. A following bullet with no date is still attached to the event
+above it, so a short indent does not turn the note into its own row.
+
+What lands in the calendar, unless a nested line overrides it:
+
+| Field | Default |
+| --- | --- |
+| Title | `Fortilegends - ` plus the bold title |
+| Time | 12:00–23:00 |
+| Color | `red` (`COLOR` from RFC 7986) |
+| Link | `https://fortilegends.ch/` |
+
+Nested lines are optional. They are not shown in the row; they go into the
+calendar entry. A line without a label is added to the description.
+
+| Line | Calendar field |
+| --- | --- |
+| `Ort: Gossau` | Place |
+| `Info: Apéro ab 18 Uhr` | Description |
+| `Zit: 18:00–23:00` | Start and end. One time (`Zit: 18:00`) keeps 23:00 as the end. A time written after the date works too: `` `12. Dezember 2026 18:00–22:00` ``. Write the hours with a colon. |
+| `Link: https://example.ch/info` | URL in the entry |
+| `Farb: crimson` | CSS color name, or a `#RRGGBB` hex |
+
+Apple Calendar and Google Calendar usually paint the event with the color of
+the calendar you save it into. Apps that read `COLOR` (Thunderbird, some
+Android calendars) show the red.
 
 ### Event cards
 

@@ -1289,24 +1289,48 @@ h6 {
 }
 
 .post__body .agenda__row {
-  display: grid;
-  grid-template-columns: 64px 240px minmax(0, 1fr) auto;
-  align-items: stretch;
-  min-height: 72px;
   margin: 0;
   border-bottom: 1px solid var(--line);
-  font-size: 14px;
-  text-transform: uppercase;
-  transition: background 0.15s, color 0.15s;
 }
 
 .post__body .agenda__row:last-child {
   border-bottom: 0;
 }
 
-.post__body .agenda__row:hover {
+.post__body .agenda__add {
+  display: grid;
+  grid-template-columns: 64px 240px minmax(0, 1fr) auto;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: left;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.post__body .agenda__add:hover,
+.post__body .agenda__add:focus-visible {
   background: var(--text);
   color: var(--background);
+}
+
+.post__body .agenda__add:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
 .agenda__idx,
@@ -1323,13 +1347,22 @@ h6 {
   font-size: 12px;
 }
 
-.agenda__row:hover .agenda__idx,
-.agenda__row:hover .agenda__when {
+.agenda__add:hover .agenda__idx,
+.agenda__add:hover .agenda__when,
+.agenda__add:focus-visible .agenda__idx,
+.agenda__add:focus-visible .agenda__when {
   border-color: var(--background);
 }
 
 .agenda__date {
   font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.agenda__add:hover .agenda__date,
+.agenda__add:focus-visible .agenda__date {
+  text-decoration: none;
 }
 
 .post__body .agenda__date code {
