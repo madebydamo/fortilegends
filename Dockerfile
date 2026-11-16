@@ -1,3 +1,6 @@
+# Local development only (docker compose, live reload). Production runs the
+# image built by the flake (modules/packages/image.nix), which serves a static
+# build with nginx.
 FROM python:3.12-slim
 
 COPY theme /theme

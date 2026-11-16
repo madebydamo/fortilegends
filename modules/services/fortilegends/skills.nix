@@ -7,6 +7,7 @@
     ...
   }: let
     name = plugin.name "fortilegends";
+    cfg = config.neo.services.${name};
   in {
     config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
       service = name;
@@ -16,9 +17,9 @@
       title = "Neo · Forti-Legends${plugin.label}";
       body = ''
         ## When to Use
-        Hosting and ops for the Forti-Legends club blog: containers, reverse proxy,
-        appdata layout, content tree, live reload. Not for writing posts (that is
-        content work on the mounted volume).
+        Hosting and ops for the Forti-Legends club blog: container, reverse proxy,
+        appdata layout, content tree, site rebuilds. Not for writing posts (that is
+        content work in appdata).
 
         ## About the site
         Official blog of Forti-Legends: document and archive club time — friendship,
@@ -26,14 +27,23 @@
         linking into posts. Public site by default (auth off).
 
         ## Architecture (hosting)
-        - Container: `${name}`
-        - Serves MkDocs with the vendored `simple-blog` theme (`theme/` in this repo) on **:8000**, Docker network `app-${name}`
-        - SWAG: `https://<subdomain>.<domain>` → `http://${name}:8000`
-        - `WATCHDOG_FORCE_POLLING=true` so bind-mounted Markdown reloads reliably
+        - Container: `${name}` (image built by the plugin, loaded by `${name}-image.service`),
+          Docker network `app-${name}`, runs as the homeserver user
+        - Inside: a small Python supervisor runs `mkdocs build` with the vendored
+          `simple-blog` theme into `/tmp/site/build-<n>` and serves `/tmp/site/current`
+          with nginx on **:${toString cfg.port}** (setting `services.${name}.port`)
+        - Every 3 s it checks the content; a few seconds after a change it rebuilds and
+          switches to the new version. A failed build keeps the previous version online
+        - `GET|POST /_e/<event>[/<detail>]` answers 204: browser events (game throws,
+          sponsor clicks, calendar adds, JS errors) counted from SWAG's log
+        - SWAG: `https://<subdomain>.<domain>` → `http://${name}:${toString cfg.port}`
         - Optional tinyauth / VPN via Neo options; defaults are public + no VPN
+        - Metrics on :9464 while monitoring collects: `fortilegends_build_ok`,
+          `fortilegends_build_warnings`, `fortilegends_site_pages`, `neo_app_job_runs_total{job="build"}`;
+          dashboard "Forti-Legends" in Grafana (Apps)
 
         ## Where content is hosted
-        Image has no site content. Neo mounts appdata:
+        Image has no site content. Neo mounts appdata read-only:
 
         | Role | Path |
         |------|------|
@@ -86,12 +96,13 @@
         another year folder) must stay valid after renames/moves.
 
         ### Caveats (content volume)
-        - Missing `mkdocs.yml` or empty `docs/` → serve fails or empty site
+        - Missing `mkdocs.yml` or empty `docs/` → build fails; a fresh container then shows
+          a "being rebuilt" placeholder page
         - Broken relative asset/post links → 404s in the browser only
         - Clearing appdata **wipes the blog** — confirm first
         - Public by default: no secrets in Markdown or assets
-        - Live reload watches the docs tree; pure `mkdocs.yml` edits may need a
-          container restart if the site does not pick them up
+        - Edits to `mkdocs.yml` and anything under `docs/` are picked up automatically;
+          to force a rebuild, `touch <appdata>/${name}/mkdocs.yml`
         - Do not invent or rewrite club history in ops tasks; only fix hosting/paths
 
         ## Ops
@@ -100,10 +111,12 @@
         docker logs ${name} --tail 100
         ls -la <appdata>/${name}
         ls -la <appdata>/${name}/docs
-        docker exec -it ${name} sh   # /docs is the mount
+        docker logs ${name} 2>&1 | grep -E '"level": "(warning|error|critical)"'   # build problems
+        docker exec swag curl -sS -o /dev/null -w '%{http_code}\n' http://${name}:${toString cfg.port}/   # 200
+        # The image has no shell or coreutils; inspect content on the host (appdata).
         ```
 
-        1. Unit healthy; logs show MkDocs on `0.0.0.0:8000`
+        1. Units `${name}-image` and `docker-${name}` active; log shows "site published"
         2. Appdata has `mkdocs.yml` + `docs/index.md`
         3. Public URL loads; index links open posts; assets load
         4. Neo settings for enable / subdomain / auth / VPN → activate
@@ -114,7 +127,8 @@
 
         ## Verification
         - Container up; homepage loads; a linked post and an image/video from
-          `assets/` resolve; new/edited files under appdata appear after reload
+          `assets/` resolve; new/edited files under appdata appear a few seconds later
+          (log: "content changed, rebuilding" then "site published")
       '';
     };
   };

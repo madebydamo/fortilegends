@@ -12,7 +12,7 @@
     config.neo.services.${name}.proxyConf = lib.mkDefault (lib.neo.mkSubdomainProxyConf {
       inherit config cfg;
       upstream = name;
-      port = 8000;
+      port = cfg.port;
     });
   };
 }

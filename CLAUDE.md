@@ -21,7 +21,7 @@ page on the site.
 | `test-docs/mkdocs.yml` | Only small changes, such as turning on a Markdown extension a new feature needs. |
 | `test-docs/docs/assets/` | Don't rename or delete media. Posts link to these files. |
 | `flake.nix`, `flake.lock`, `modules/**/*.nix` | **Don't touch.** Leave all the Nix stuff alone. |
-| `Dockerfile`, `docker-compose.yml` | Only change if a theme change really needs it (for example a new pip dependency). |
+| `Dockerfile`, `docker-compose.yml` | Only change if a theme change really needs it (for example a new pip dependency). They are for local work; production uses the image from `modules/packages/image.nix`, so add a new dependency there too. |
 
 ### Reusable components for future posts
 
