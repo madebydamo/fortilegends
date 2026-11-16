@@ -5,11 +5,62 @@
  * - fallback for the front-page mini game (intro.js) when it cannot run
  * - count-up animation for the stats band
  * - side-by-side photo rows and a lightbox for post media
+ * - visit statistics: window.fortiTrack(event, detail) sends GET /_e/<event>/<detail>
  */
 (function () {
   "use strict";
 
   var doc = document;
+
+  /* ------------------------------------------------------------------ */
+  /* Statistics beacon: the site's own nginx answers /_e/... with 204    */
+  /* and the server's access log counts it. Fixed event names, no        */
+  /* cookies, no ids; nothing from automated browsers; at most 200 per   */
+  /* page view (5 errors).                                               */
+  /* ------------------------------------------------------------------ */
+
+  var trackLeft = 200;
+  var errorsLeft = 5;
+
+  function trackPart(value) {
+    return String(value).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+  }
+
+  function track(event, detail) {
+    if (navigator.webdriver || trackLeft <= 0) return;
+    trackLeft--;
+    var url = "/_e/" + trackPart(event).replace(/[^a-z_]/g, "_");
+    if (detail !== undefined && detail !== null && detail !== "") url += "/" + (trackPart(detail) || "x");
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon(url)) return;
+      fetch(url, { method: "GET", keepalive: true, credentials: "omit" }).catch(function () {});
+    } catch (e) {
+      /* statistics never break the page */
+    }
+  }
+  window.fortiTrack = track;
+
+  function trackError(kind) {
+    if (errorsLeft <= 0) return;
+    errorsLeft--;
+    track("js_error", kind);
+  }
+  // Capture phase: also sees failed <script> loads (three.js from the CDN).
+  window.addEventListener(
+    "error",
+    function (event) {
+      var target = event.target;
+      if (target && target !== window && target.tagName) {
+        if (target.tagName === "SCRIPT") trackError("load");
+        return;
+      }
+      trackError("script");
+    },
+    true
+  );
+  window.addEventListener("unhandledrejection", function () {
+    trackError("promise");
+  });
 
   function $(sel, root) {
     return (root || doc).querySelector(sel);
@@ -544,6 +595,7 @@
         var filename = "fortilegends-" + (slug(title) || "termin") + ".ics";
         face.setAttribute("aria-label", title + ", " + shownDate + ", in Kalender iträge");
         face.addEventListener("click", function () {
+          track("calendar", day);
           openCalendar(buildIcs(entry), filename);
           status.textContent = title + " isch als Kalenderdatei parat.";
         });
@@ -830,6 +882,7 @@
     imgs.forEach(function (img) {
       img.setAttribute("data-zoom", "");
       img.addEventListener("click", function () {
+        track("lightbox");
         open(img.currentSrc || img.src, img.alt);
       });
     });
@@ -849,7 +902,10 @@
     var intro = $(".intro");
     if (!intro) return;
     setTimeout(function () {
-      if (!intro.classList.contains("is-ready")) intro.classList.add("is-static");
+      if (!intro.classList.contains("is-ready")) {
+        intro.classList.add("is-static");
+        track("intro_static");
+      }
     }, 6000);
   }
 

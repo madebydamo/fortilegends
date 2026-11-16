@@ -66,6 +66,15 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
 const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
+// Statistics beacon from main.js (window.fortiTrack); a no-op without it.
+function track(event, detail) {
+  try {
+    if (typeof window.fortiTrack === "function") window.fortiTrack(event, detail);
+  } catch (e) {
+    /* statistics never break the game */
+  }
+}
+
 function boot(intro) {
   const stage = intro.querySelector(".intro__stage");
   const title = intro.querySelector(".intro__title");
@@ -244,7 +253,7 @@ function boot(intro) {
 
   /* ------------------------------------------------------------- loading */
   const loader = new GLTFLoader();
-  loadModel(intro.dataset.ball, (obj) => {
+  loadModel(intro.dataset.ball, "ball", (obj) => {
     if (state !== "aim") return;
     const fitted = fitBall(obj);
     if (fitted) {
@@ -254,7 +263,7 @@ function boot(intro) {
       frontQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(e[0], e[1], e[2]));
     }
   });
-  loadModel(intro.dataset.goal, (obj) => {
+  loadModel(intro.dataset.goal, "goal", (obj) => {
     if (state !== "aim") return;
     const fitted = fitGoal(obj, parseFloat(intro.dataset.goalRotation || "0"));
     if (fitted) {
@@ -265,7 +274,7 @@ function boot(intro) {
     }
   });
 
-  function loadModel(url, cb) {
+  function loadModel(url, kind, cb) {
     if (!url) return;
     loader.load(
       url,
@@ -274,10 +283,14 @@ function boot(intro) {
           cb(gltf.scene);
         } catch (e) {
           console.warn("intro: model could not be used", url, e);
+          track("model_fallback", kind);
         }
       },
       undefined,
-      (e) => console.warn("intro: model could not be loaded, using the built-in one", url, e)
+      (e) => {
+        console.warn("intro: model could not be loaded, using the built-in one", url, e);
+        track("model_fallback", kind);
+      }
     );
   }
 
@@ -647,14 +660,20 @@ function boot(intro) {
 
   // the resting ball: click / tap to play again
   pageCanvas.addEventListener("click", () => {
-    if (state === "done") reset();
+    if (state === "done") {
+      track("replay");
+      reset();
+    }
   });
 
   // Scrolling before the throw: skip to the end, as if the ball had been thrown.
   window.addEventListener(
     "scroll",
     () => {
-      if (state === "aim" && window.scrollY > 24 && performance.now() > ignoreScrollUntil) finish(true);
+      if (state === "aim" && window.scrollY > 24 && performance.now() > ignoreScrollUntil) {
+        track("skip");
+        finish(true);
+      }
     },
     { passive: true }
   );
@@ -742,6 +761,7 @@ function boot(intro) {
     const P1 = P0.clone().add(new THREE.Vector3(ax * reach, Math.max(ay, -0.3) * reach + 0.35, -reach * 0.8));
     const P2 = P3.clone().add(new THREE.Vector3(kind === "ad" ? ax * 0.2 : -ax * 0.4, 0.45 + Math.max(ay, 0) * 0.45, kind === "ad" ? 0.9 : 2.2));
     flight = { P0, P1, P2, P3, t: 0, dur: 0.85 + 0.35 * (1 - power), kind, ad: aimed };
+    track("throw", kind === "ad" ? "board" : "goal");
     state = "flight";
     intro.classList.remove("is-aiming");
     hideAim();
@@ -827,6 +847,7 @@ function boot(intro) {
     const host = adHost(href);
     const isIT = ad.style === "terminal" || /damianmoser\.ch/i.test(href);
     adPromptHref = href;
+    track("sponsor_prompt", host);
     if (adPromptAsk) adPromptAsk.textContent = "Wottsch " + host + " ufmache?";
     if (adPromptBlurb) {
       adPromptBlurb.textContent = isIT
@@ -844,6 +865,7 @@ function boot(intro) {
     adPromptGo.addEventListener("click", (e) => {
       e.preventDefault();
       const href = adPromptHref;
+      track("sponsor_open", adHost(href));
       closeAdPrompt();
       openAdvertiser(href);
     });
@@ -851,6 +873,7 @@ function boot(intro) {
   if (adPromptNo) {
     adPromptNo.addEventListener("click", (e) => {
       e.preventDefault();
+      if (adPromptHref) track("sponsor_decline", adHost(adPromptHref));
       closeAdPrompt();
     });
   }
