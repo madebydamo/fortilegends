@@ -1,48 +1,60 @@
-# FortiLegends MkDocs service options.
+# Forti-Legends blog options.
 {...}: {
-  flake.modules.nixos.fortilegends-option = {
+  neoPlugin.modules.fortilegends-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.fortilegends = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "fortilegends";
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "FortiLegends Blog" {rank = 0;};
+              enabled = mkEnableOption "Your club's blog with stories, photos and upcoming dates${plugin.label}" {rank = 0;};
             }
             // neo.mkReverseProxyOptions {
-              subdomain = "fortilegends";
-              auth = {
-                enabled = false;
-              };
+              subdomain = name;
+              auth.enabled = false;
             }
             // neo.mkVpnOptions {
-              containers = ["fortilegends"];
-              networks = ["internal"];
+              containers = [name];
+              networks = [(lib.neo.docker.serviceNetwork name)];
               ports = [8000];
             }
             // lib.neo.mkContainerDefinitions {
-              fortilegends = "madebydamo/fortilegends:master";
+              ${name} = "madebydamo/fortilegends:master";
             }
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/fortilegends"
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
-              icon = "https://fortitudo.ch/wp-content/uploads/bb-plugin/cache/Handball_Q-circle-7f2fafa8ce8f1d478818b326ede99714-609e8d9a014ef.jpg";
+              category = "Media";
+              icon = ./icon.png;
+              tagline = "The Forti-Legends club blog${plugin.label}";
               description = ''
-                FortiLegends is the official blog of the legendary year 2000 team.
-                Built with MkDocs and a vendored mkdocs-simple-blog theme, it serves as a living site for team legends, history and shared memories.
-                Features live reload and is served over the internal network with optional reverse proxy.
-                The content volume is mounted at /docs (containing mkdocs.yml and docs/).
+                The club's stories, photos and videos, with upcoming dates visitors can add to their calendar and a small handball game on the front page.
+                Anyone can read it; posts are simple text files on the server.
               '';
+              notes = ''
+                Posts live in the app data folder (mkdocs.yml and the docs folder). Clearing app data deletes the blog.
+                Theme changes (look, front-page game) come with a plugin update.
+              '';
+              replaces = ["WordPress" "Wix"];
+              privacy = [];
               projectUrl = "https://fortilegends.ch/";
               githubUrl = "https://github.com/madebydamo/fortilegends/";
+              license = {
+                # The theme (a fork of mkdocs-simple-blog); MkDocs itself is BSD-2-Clause.
+                spdx = "MIT";
+                url = "https://github.com/madebydamo/fortilegends/blob/master/theme/LICENSE";
+              };
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "FortiLegends service configuration";
+        description = "Forti-Legends blog${plugin.label}";
       };
     };
 }

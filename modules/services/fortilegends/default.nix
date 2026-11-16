@@ -1,28 +1,28 @@
-# FortiLegends MkDocs service implementation (serves on port 8000 internally).
+# Forti-Legends blog: one container on the service network, content from appdata.
 {...}: {
-  flake.modules.nixos.fortilegends = {
+  neoPlugin.modules.fortilegends = {
     config,
     lib,
+    plugin,
     ...
-  }:
-    with lib; let
-      cfg = config.neo.services.fortilegends;
-    in {
-      config = mkIf cfg.enabled {
-        systemd.services.docker-fortilegends.preStart = lib.neo.mkActivationScriptForDir config {
-          dirPath = "${config.neo.core.volumes.appdata}/fortilegends";
-        };
+  }: let
+    name = plugin.name "fortilegends";
+    cfg = config.neo.services.${name};
+    appdata = "${config.neo.core.volumes.appdata}/${name}";
+  in {
+    config = lib.mkIf cfg.enabled {
+      systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [appdata];
 
-        virtualisation.oci-containers.containers.fortilegends = {
-          environment = {
+      virtualisation.oci-containers.containers.${name} = {
+        image = cfg.containers.${name};
+        environment =
+          lib.neo.linuxserverEnv config
+          // {
             WATCHDOG_FORCE_POLLING = "true";
-            TZ = config.neo.core.timeZone;
           };
-          image = cfg.containers.fortilegends;
-          autoStart = true;
-          volumes = ["${config.neo.core.volumes.appdata}/fortilegends:/docs"];
-          networks = ["internal"];
-        };
+        volumes = ["${appdata}:/docs"];
+        networks = [(lib.neo.docker.serviceNetwork name)];
       };
     };
+  };
 }

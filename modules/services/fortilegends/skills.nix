@@ -1,19 +1,19 @@
-# Hermes skill for fortilegends.
+# Hermes skill for the Forti-Legends blog.
 {...}: {
-  flake.modules.nixos.fortilegends-skill = {
+  neoPlugin.modules.fortilegends-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.fortilegends;
-    domain = config.neo.services.swag.domain or null;
+    name = plugin.name "fortilegends";
   in {
-    config.neo.services.fortilegends.skill.conf = lib.neo.mkServiceSkill {
-      service = "fortilegends";
-      inherit cfg domain;
-      description = "FortiLegends MkDocs team blog hosting";
-      tags = ["neo" "fortilegends" "mkdocs" "blog" "docs"];
-      title = "Neo · FortiLegends";
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
+      description = "Forti-Legends club blog hosting (MkDocs)";
+      tags = ["neo" name "mkdocs" "blog" "docs"];
+      title = "Neo · Forti-Legends${plugin.label}";
       body = ''
         ## When to Use
         Hosting and ops for the Forti-Legends club blog: containers, reverse proxy,
@@ -26,9 +26,9 @@
         linking into posts. Public site by default (auth off).
 
         ## Architecture (hosting)
-        - Container: `fortilegends` (`madebydamo/fortilegends:master`)
-        - Serves MkDocs with the vendored `simple-blog` theme (`theme/` in this repo) on **:8000**, Docker network `internal`
-        - SWAG: `https://<subdomain>.<domain>` → `http://fortilegends:8000`
+        - Container: `${name}`
+        - Serves MkDocs with the vendored `simple-blog` theme (`theme/` in this repo) on **:8000**, Docker network `app-${name}`
+        - SWAG: `https://<subdomain>.<domain>` → `http://${name}:8000`
         - `WATCHDOG_FORCE_POLLING=true` so bind-mounted Markdown reloads reliably
         - Optional tinyauth / VPN via Neo options; defaults are public + no VPN
 
@@ -37,7 +37,7 @@
 
         | Role | Path |
         |------|------|
-        | Host appdata | `<neo.core.volumes.appdata>/fortilegends` |
+        | Host appdata | `<neo.core.volumes.appdata>/${name}` |
         | Container | `/docs` |
         | Config | `/docs/mkdocs.yml` |
         | Pages | `/docs/docs/**` |
@@ -45,7 +45,7 @@
         Typical tree:
 
         ```text
-        <appdata>/fortilegends/
+        <appdata>/${name}/
           mkdocs.yml
           docs/
             index.md              # homepage: welcome, outlook, year → post links
@@ -96,11 +96,11 @@
 
         ## Ops
         ```bash
-        systemctl status docker-fortilegends
-        docker logs fortilegends --tail 100
-        ls -la <appdata>/fortilegends
-        ls -la <appdata>/fortilegends/docs
-        docker exec -it fortilegends sh   # /docs is the mount
+        systemctl status docker-${name}
+        docker logs ${name} --tail 100
+        ls -la <appdata>/${name}
+        ls -la <appdata>/${name}/docs
+        docker exec -it ${name} sh   # /docs is the mount
         ```
 
         1. Unit healthy; logs show MkDocs on `0.0.0.0:8000`
@@ -110,7 +110,7 @@
 
         ## Credentials
         - None for the app itself
-        - Edge: optional tinyauth (`services.fortilegends.auth`; default off)
+        - Edge: optional tinyauth (`services.${name}.auth`; default off)
 
         ## Verification
         - Container up; homepage loads; a linked post and an image/video from
