@@ -65,9 +65,9 @@
               projectUrl = "https://fortilegends.ch/";
               githubUrl = "https://github.com/madebydamo/fortilegends/";
               license = {
-                # The theme (a fork of mkdocs-simple-blog); MkDocs itself is BSD-2-Clause.
+                # The repo (theme: a fork of mkdocs-simple-blog, also MIT); MkDocs itself is BSD-2-Clause.
                 spdx = "MIT";
-                url = "https://github.com/madebydamo/fortilegends/blob/master/theme/LICENSE";
+                url = "https://github.com/madebydamo/fortilegends/blob/master/LICENSE";
               };
             }
             // lib.neo.mkSkillOptions {};
